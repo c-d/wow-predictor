@@ -1,0 +1,7 @@
+﻿## Interface: 40300
+## Version: 1.0.0
+## Author: Chris Deaker
+## Title: Predictor
+## Notes: This plugin tracks historical player data and generates user models, which it uses to suggest future actions to the player.
+## SavedVariablesPerCharacter: PredictorAddonConfig
+Load.xml

@@ -345,7 +345,7 @@ function PredictListFrame_SpellWasCast(spellName)
 		if spellFound then
 			MatchLength = math.min(a.Size[a.ModelInUse], MatchLength + 1);	-- maxes at sequence length
 		else 
-			MatchLength = 0;
+			MatchLength = 0; 
 			UpdateRankHistory(#PredictListFrame.spells);
 			UpdateLikelihoodHistory(0);
 		end

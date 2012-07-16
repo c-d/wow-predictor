@@ -14,26 +14,28 @@ local frame = CreateFrame("Frame");
 local lastTime = time();
 local lastEvent = nil;
 frame:SetScript("OnUpdate", function(self, ...)
-	if EventBuffer then
-		if lastEvent and lastEvent ~= EventBuffer[#EventBuffer] then
-			EventBuffer = filterEvents(EventBuffer);	-- Remove irrelevant stuff.	
-			if #EventBuffer > 0 then
-				-- Now that this is filtered, let predictor know that something relevant occurred.
-				-- Do this whenever eventbuffer isn't empty - don't want to wait for it to be ready
-				if lastEvent ~= EventBuffer[#EventBuffer] then Predictor:AddEventForPrediction(EventBuffer[#EventBuffer]);	end;
-			end
-			if #EventBuffer > a.Size[PlayerName] then
-				--dprint(EventBuffer[#EventBuffer][2][2]);
-				-- Now make a sub-buffer of pre-sequence + result
-				sub = {};
-				for i=1,a.Size[PlayerName] + 1 do
-					sub[i] = EventBuffer[i];
+	if a.ProcessEvents then	-- Flag to pause event processing if needed.
+		if EventBuffer then
+			if lastEvent and lastEvent ~= EventBuffer[#EventBuffer] then
+				EventBuffer = filterEvents(EventBuffer);	-- Remove irrelevant stuff.	
+				if #EventBuffer > 0 then
+					-- Now that this is filtered, let predictor know that something relevant occurred.
+					-- Do this whenever eventbuffer isn't empty - don't want to wait for it to be ready
+					if lastEvent ~= EventBuffer[#EventBuffer] then Predictor:AddEventForPrediction(EventBuffer[#EventBuffer]);	end;
 				end
-				markov:refresh(sub);
-				tremove(EventBuffer,1); 
+				if #EventBuffer > a.Size[PlayerName] then
+					--dprint(EventBuffer[#EventBuffer][2][2]);
+					-- Now make a sub-buffer of pre-sequence + result
+					sub = {};
+					for i=1,a.Size[PlayerName] + 1 do
+						sub[i] = EventBuffer[i];
+					end
+					markov:refresh(sub);
+					tremove(EventBuffer,1); 
+				end
 			end
+			lastEvent = EventBuffer[#EventBuffer];
 		end
-		lastEvent = EventBuffer[#EventBuffer];
 	end
 end);
 

@@ -3,7 +3,7 @@ local AddonName, a = ...
 -- Need a frame to catch events
 local frame, events = CreateFrame("Frame"), {};
 
-if TrackData == nil then TrackData = true end
+EventBuffer = {}
 
 ---------------------------------------------------------------------------------
 -- This section handles tracking of new actions, as they occur
@@ -54,20 +54,10 @@ end
 --- Log an event to the global event log.
 -- Also handles all formatting.
 function ColLogEvent(desc, ...)
-	if TrackData then
-		if not EventBuffer then
-			EventBuffer = {}	-- init
-		end
-		-- note that we're simply inserting args without an event description
-		-- this is all assuming we only ever use one event type
-		if DebugMode then
-			print(desc)
-		end
-		
-		entry = {desc, {...}}	
-		table.insert(EventBuffer, entry)
+	entry = {desc, {...}}	
+	table.insert(EventBuffer, entry)
+	if not a.PauseEventTracking then
 		table.insert(a.EventLog, entry)
-		--dprint(#EventBuffer .. "/" .. #a.EventLog);
 	end
 end
 

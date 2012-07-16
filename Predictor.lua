@@ -297,20 +297,6 @@ function PredictListFrame_UpdateContents()
 end
 	
 function PredictListFrame_SpellWasCast(spellName)
-	-- if there are no slots to the left, just get rid of it
-	-- if # PredictListFrame.HistoryTextures > a.Size[a.ModelInUse] then
-		-- h = PredictListFrame.HistoryTextures[1];
-		-- removeTexture(h);
-		-- table.remove(PredictListFrame.HistoryTextures, 1);
-		-- print(#PredictListFrame.HistoryTextures);
-	-- end
-	-- shuffle everything one slot to the left
-	--for i = 1, # PredictListFrame.HistoryTextures do
-	--	texture = PredictListFrame.HistoryTextures[i];
-	--	p, rt, rp, x, y = texture:GetPoint();
-		--texture:SetPoint("TOPLEFT", x - 40, y);
-		--texture:SetAlpha(texture:GetAlpha() - (1.0 / (a.Size[a.ModelInUse] + 1)));
-	--end
 	if not a.HideVisualizations then 
 		local spellFound = false;
 		local rank = 0;
@@ -352,9 +338,9 @@ function PredictListFrame_SpellWasCast(spellName)
 		UpdateRankHistory(rank);
 		UpdateLikelihoodHistory(likelihood);
 		if a.TrialMode then 
-			PredictorTrialsAddon:Log("SPELLCAST", {rank, likelihood});
+			PredictorTrialsAddon:LogSpellAccuracy(rank, likelihood);
 		end
-		print(rank .. " - " .. likelihood);
+		--dprint(rank .. " - " .. likelihood);
 	end
 end
 

@@ -266,6 +266,7 @@ function PredictorAddon:LoadGlobalData()
 	a.Subscribers = loadFromConfig("Subscribers");
 	a.SourceInfo = loadFromConfig("SourceInfo");
 	a.EventLog = loadFromConfig("EventLog");
+	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
 	
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
 	a.VisAlphaDecay = loadFromConfig("VisAlphaDecay", 0.002);
@@ -313,6 +314,7 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["Subscribers"] = a.Subscribers;
 	PredictorAddonConfig["SourceInfo"] = a.SourceInfo;
 	PredictorAddonConfig["EventLog"] = a.EventLog;
+	PredictorAddonConfig["ProcessEvents"] = a.ProcessEvents;
 	PredictorAddonConfig["VisMoveSpeed"] = a.VisMoveSpeed;
 	PredictorAddonConfig["VisAlphaDecay"] = a.VisAlphaDecay;
 	PredictorAddonConfig["VisIconSize"] = a.VisIconSize;
@@ -357,16 +359,28 @@ function PredictorAddon:ResetVisualizations()
 	 Predictor:InitAll();
 end
 
-function PredictorAddon:HideVisualizations(val)
-	a.HideVisualizations = val;	-- This isn't saved between sessions
-end
-
-function PredictorAddon:SetTrialMode(val)
-	a.TrialMode = val;	-- This isn't saved between sessions
-end
-
 function PredictorAddon:GetEventCount()
 	return #a.EventLog
+end
+
+-- The following settings are specific to individual trial sessions, so they are not saved.
+
+function PredictorAddon:SetSequenceLength(val)
+	a.Size[a.ModelInUse] = val;
+	MarkovAnalyser:fullRefresh();
+end
+
+function PredictorAddon:HideVisualizations(val)
+	a.HideVisualizations = val;
+end
+
+-- Trial mode causes additional logging to take place, sent to PredictorTrialAddon
+function PredictorAddon:SetTrialMode(val)
+	a.TrialMode = val;
+end
+
+function PredictorAddon:SetTrackEvents(val)
+	a.PauseEventTracking = not val;
 end
 
 function PredictorAddon:SetDebugMode(val)

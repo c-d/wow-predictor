@@ -248,6 +248,18 @@ function PredictorAddon:setupOptions()
 							Predictor:InitAll();
 						end,
 						width = "full"
+					},
+					enabledragging = {
+						name = "Enable dragging",
+						desc = "Unlock the visualization frame to allow repositioning",
+						type = "toggle",
+						set = function(info, val) 
+							a.VisDragEnabled = val;
+						end,
+						get = function()
+							return a.VisDragEnabled;
+						end,
+						width = "full"
 					}
 				}
 			}
@@ -288,6 +300,11 @@ function PredictorAddon:LoadGlobalData()
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
 	a.VisAlphaDecay = loadFromConfig("VisAlphaDecay", 0.002);
 	a.VisIconSize = loadFromConfig("VisIconSize", 30);
+	a.VisPosX = loadFromConfig("VisPosX", -200);
+	a.VisPosY = loadFromConfig("VisPosY", -275);
+	a.VisPosAnchor = loadFromConfig("VisPosAnchor", "RIGHT");
+	a.VisDragEnabled = loadFromConfig("VisDragEnabled", false);
+	
 	
 	a.EvaluationMode = loadFromConfig("EvaluationMode", false);
 	
@@ -333,9 +350,15 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["EventLog"] = a.EventLog;
 	PredictorAddonConfig["ProcessEvents"] = a.ProcessEvents;
 	PredictorAddonConfig["MaxTimeBetweenEvents"] = a.MaxTimeBetweenEvents;
+	
 	PredictorAddonConfig["VisMoveSpeed"] = a.VisMoveSpeed;
 	PredictorAddonConfig["VisAlphaDecay"] = a.VisAlphaDecay;
 	PredictorAddonConfig["VisIconSize"] = a.VisIconSize;
+	PredictorAddonConfig["VisPosX"] = a.VisPosX;
+	PredictorAddonConfig["VisPosY"] = a.VisPosY;
+	PredictorAddonConfig["VisPosAnchor"] = a.VisPosAnchor;
+	PredictorAddonConfig["VisDragEnabled"] = a.VisDragEnabled;
+	
 	PredictorAddonConfig["EvaluationMode"] = a.EvaluationMode;
 end
 

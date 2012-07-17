@@ -48,7 +48,7 @@ function Predictor:deleteData()
 			PredictListFrame.textFields = {};
 		end
 		if PredictListFrame.textures then
-			for i = 1,  # PredictListFrame.textFields  do
+			for i = 1,  # PredictListFrame.textures  do
 				PredictListFrame.textures[i]:Hide();
 			end
 			PredictListFrame.textures = {}
@@ -114,7 +114,21 @@ function Predictor:initPredictListFrame()
 		table.insert(PredictListFrame.textFields, text);
 		textY = textY - a.VisIconSize - 1;
 	end
-	PredictListFrame:SetPoint("RIGHT", -200, -275)
+	-- Positioning
+	PredictListFrame:SetMovable(true);	-- Leave this on always, dragging still dependent upon config var
+	PredictListFrame:SetPoint(a.VisPosAnchor, a.VisPosX, a.VisPosY)
+	PredictListFrame:SetScript("OnMouseUp", function(self, elapsed)
+		if a.VisDragEnabled then
+			PredictListFrame:StopMovingOrSizing();
+			a.VisPosAnchor, rt, rp, a.VisPosX, a.VisPosY = PredictListFrame:GetPoint();
+			PredictorAddon:SaveGlobalData();
+		end
+	end);
+	PredictListFrame:SetScript("OnMouseDOWN", function(self, elapsed)
+		if a.VisDragEnabled then
+			PredictListFrame:StartMoving();
+		end
+	end);
 	
 	PredictListFrame:SetScript("OnUpdate", function(self, elapsed)
 		PredictListFrame.timer = PredictListFrame.timer + elapsed
@@ -179,7 +193,7 @@ function Predictor:initLineFrame()
 	LineFrame:SetHeight(250)
 	LineFrame:SetWidth(650)
 	p, rt, rp, x, y = PredictListFrame:GetPoint();
-	LineFrame:SetPoint("TOPRIGHT", x, 0);
+	LineFrame:SetPoint("TOPRIGHT", PredictListFrame, "TOPLEFT", -50, 0);
 	LineFrame.Lines = {}
 	p, rt, rp, x, y = PredictListFrame:GetPoint();
 	LineFrame.xAnchor = x
@@ -297,17 +311,17 @@ function PredictListFrame_UpdateContents()
 end
 
 function Predictor:Break()
-	if PredictListFrame.textFields then
-		for i = 1,  # PredictListFrame.textFields  do
-			PredictListFrame.textFields[i]:Hide();
-		end
-	end
-	if PredictListFrame.textures then
-		for i = 1,  # PredictListFrame.textFields  do
-			PredictListFrame.textures[i]:Hide();
-		end
-	end
-	PredictListFrame.spells = {};
+	-- if PredictListFrame.textFields then
+		-- for i = 1,  # PredictListFrame.textFields  do
+			-- PredictListFrame.textFields[i]:Hide();
+		-- end
+	-- end
+	-- if PredictListFrame.textures then
+		-- for i = 1,  # PredictListFrame.textFields  do
+			-- PredictListFrame.textures[i]:Hide();
+		-- end
+	-- end
+	-- PredictListFrame.spells = {};
 end
 	
 function PredictListFrame_SpellWasCast(spellName)

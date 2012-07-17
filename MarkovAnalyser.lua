@@ -17,6 +17,7 @@ frame:SetScript("OnUpdate", function(self, ...)
 	if a.ProcessEvents then	-- Flag to pause event processing if needed.
 		if EventBuffer then
 			if lastEvent and lastEvent ~= EventBuffer[#EventBuffer] then
+				--print("diff = " .. (EventBuffer[#EventBuffer][3] - lastEvent[3]));
 				EventBuffer = filterEvents(EventBuffer);	-- Remove irrelevant stuff.	
 				if #EventBuffer > 0 then
 					-- Now that this is filtered, let predictor know that something relevant occurred.
@@ -73,6 +74,7 @@ end
 -- Note that this only updates THIS player model, not the currently active player model. A model being ACTIVE means it is being used for prediction.
 function markov:refresh(buffer)
 	local events = {}	-- refresh events
+	local times = {};
 	if buffer then
 		for i=1,# buffer do
 			eType = buffer[i][1];
@@ -81,6 +83,7 @@ function markov:refresh(buffer)
 				action = buffer[i][2][2];
 				if actor == "player" then -- only process player actions - this can be changed later if wanted.
 					table.insert(events, actor .. "&" .. action);
+					table.insert(times, buffer[i][3]);
 				end
 			end
 		end
@@ -89,19 +92,25 @@ function markov:refresh(buffer)
 	if #events > a.Size[PlayerName] then	-- don't want to build any short chains
 		Queue:Init(events, a.Size[PlayerName]);
 		for i=a.Size[PlayerName] + 1,#events do
-			key = Queue:GetString();
-			--print(events[a.MarkovChainLength] .. " - " .. key);
-			chain = a.Models[PlayerName][key]
-			if not chain then 
-				dprint("New chain: " .. key);
-				chain = Chain.Init(key)
-				a.Models[PlayerName][key] = chain;
-				changed = true;
+			--print(times[i] - times[i - 1]);
+			if times[i] - times[i - 1] < a.MaxTimeBetweenEvents then
+				--print(times[i] .. " -- " .. times[i - 1]);
+				key = Queue:GetString();
+				--print(events[a.MarkovChainLength] .. " - " .. key);
+				chain = a.Models[PlayerName][key]
+				if not chain then 
+					dprint("New chain: " .. key);
+					chain = Chain.Init(key)
+					a.Models[PlayerName][key] = chain;
+					changed = true;
+				end
+				-- finally, the predicted event
+				Chain.AddEvent(chain, events[a.Size[PlayerName] + 1]);
+				m.Broadcast(Chain.ToString(chain));
+				Chain.AddEvent(chain, events[i]);
+			else
+				Predictor:Break();
 			end
-			-- finally, the predicted event
-			Chain.AddEvent(chain, events[a.Size[PlayerName] + 1]);
-			m.Broadcast(Chain.ToString(chain));
-			Chain.AddEvent(chain, events[i]);
 			Queue:Add(events[i]);	-- get next event
 		end
 	end

@@ -54,7 +54,7 @@ end
 --- Log an event to the global event log.
 -- Also handles all formatting.
 function ColLogEvent(desc, ...)
-	entry = {desc, {...}}	
+	entry = {desc, {...}, time()}	
 	table.insert(EventBuffer, entry)
 	if not a.PauseEventTracking then
 		table.insert(a.EventLog, entry)

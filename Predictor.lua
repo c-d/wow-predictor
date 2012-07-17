@@ -45,13 +45,13 @@ function Predictor:deleteData()
 			for i = 1,  # PredictListFrame.textFields  do
 				PredictListFrame.textFields[i]:Hide();
 			end
-			PredictListFrame.HistoryTextures = {};
+			PredictListFrame.textFields = {};
 		end
 		if PredictListFrame.textures then
 			for i = 1,  # PredictListFrame.textFields  do
 				PredictListFrame.textures[i]:Hide();
 			end
-			PredictListFrame.HistoryTextures = {}
+			PredictListFrame.textures = {}
 		end
 	end
 	if LineFrame then 
@@ -294,6 +294,20 @@ function PredictListFrame_UpdateContents()
 		end	
 	end
 	
+end
+
+function Predictor:Break()
+	if PredictListFrame.textFields then
+		for i = 1,  # PredictListFrame.textFields  do
+			PredictListFrame.textFields[i]:Hide();
+		end
+	end
+	if PredictListFrame.textures then
+		for i = 1,  # PredictListFrame.textFields  do
+			PredictListFrame.textures[i]:Hide();
+		end
+	end
+	PredictListFrame.spells = {};
 end
 	
 function PredictListFrame_SpellWasCast(spellName)

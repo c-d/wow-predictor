@@ -77,11 +77,27 @@ function PredictorAddon:setupOptions()
 						desc = "Run a simulation to estimate the accuracy of this model",
 						type = "execute",
 						func = function()
-							MarkovAnalyser:Simulate();
+							--MarkovAnalyser:Simulate();
 						end
 					},
-					selectmodel = {
+					settimebetweenevents = {
 						order = 3,
+						name = "Max time between events",
+						desc = "Set the maximum time (in seconds) to allow between linked events. If an event occurs after this threshold, it is counted as the beginning of a new sequence. Higher thresholds will have a less noticeable effect.",
+						type = "range",
+						min = 1,
+						max = 30,
+						step = 1,
+						get = function()
+							return a.MaxTimeBetweenEvents;
+						end,
+						set = function(info, val)
+							a.MaxTimeBetweenEvents = val;
+						end,
+						width = "full"
+					},
+					selectmodel = {
+						order = 4,
 						name = "Select model",
 						desc = "Select the model used for prediction.",
 						type = "select",
@@ -115,7 +131,7 @@ function PredictorAddon:setupOptions()
 						width = "full"
 					},
 					subscribe = {
-						order = 5,
+						order = 6,
 						name = "Subscribe to new model",
 						desc = "Subscribe to a subscription model",
 						type = "input",
@@ -125,7 +141,7 @@ function PredictorAddon:setupOptions()
 						width = "full"
 					},
 					unsubscribe = {
-						order = 4,
+						order = 5,
 						name = "Unsubscribe",
 						desc = "Remove subscription for current model. This will delete all existing data for this model.",
 						type = "execute",
@@ -267,6 +283,7 @@ function PredictorAddon:LoadGlobalData()
 	a.SourceInfo = loadFromConfig("SourceInfo");
 	a.EventLog = loadFromConfig("EventLog");
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
+	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 5);
 	
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
 	a.VisAlphaDecay = loadFromConfig("VisAlphaDecay", 0.002);
@@ -315,6 +332,7 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["SourceInfo"] = a.SourceInfo;
 	PredictorAddonConfig["EventLog"] = a.EventLog;
 	PredictorAddonConfig["ProcessEvents"] = a.ProcessEvents;
+	PredictorAddonConfig["MaxTimeBetweenEvents"] = a.MaxTimeBetweenEvents;
 	PredictorAddonConfig["VisMoveSpeed"] = a.VisMoveSpeed;
 	PredictorAddonConfig["VisAlphaDecay"] = a.VisAlphaDecay;
 	PredictorAddonConfig["VisIconSize"] = a.VisIconSize;

@@ -260,6 +260,30 @@ function PredictorAddon:setupOptions()
 							return a.VisDragEnabled;
 						end,
 						width = "full"
+					},
+					showrankaccuracy = {
+						name = "Show ranking accuracy",
+						desc = "Accuracy rating for the previous [sequence size] actions, based on the rankings of the abilities used.",
+						type = "toggle",
+						set = function(info, val) 
+							a.VisShowRankAccuracy = val;
+							Predictor:UpdateAccuracyTextVisibility();
+						end,
+						get = function()
+							return a.VisShowRankAccuracy;
+						end
+					},
+					showpredaccuracy = {
+						name = "Show prediction % accuracy",
+						desc = "Accuracy rating for the previous [sequence size] actions, based on the predicted likelihood (%) of the abilities used.",
+						type = "toggle",
+						set = function(info, val) 
+							a.VisShowPredAccuracy = val;
+							Predictor:UpdateAccuracyTextVisibility();
+						end,
+						get = function()
+							return a.VisShowPredAccuracy;
+						end
 					}
 				}
 			}
@@ -304,7 +328,8 @@ function PredictorAddon:LoadGlobalData()
 	a.VisPosY = loadFromConfig("VisPosY", -275);
 	a.VisPosAnchor = loadFromConfig("VisPosAnchor", "RIGHT");
 	a.VisDragEnabled = loadFromConfig("VisDragEnabled", false);
-	
+	a.VisShowRankAccuracy = loadFromConfig("VisShowRankAccuracy", false);
+	a.VisShowPredAccuracy = loadFromConfig("VisShowPredAccuracy", false);
 	
 	a.EvaluationMode = loadFromConfig("EvaluationMode", false);
 	
@@ -358,6 +383,8 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["VisPosY"] = a.VisPosY;
 	PredictorAddonConfig["VisPosAnchor"] = a.VisPosAnchor;
 	PredictorAddonConfig["VisDragEnabled"] = a.VisDragEnabled;
+	PredictorAddonConfig["VisShowRankAccuracy"] = a.VisShowRankAccuracy;
+	PredictorAddonConfig["VisShowPredAccuracy"] = a.VisShowPredAccuracy;
 	
 	PredictorAddonConfig["EvaluationMode"] = a.EvaluationMode;
 end

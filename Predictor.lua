@@ -323,6 +323,19 @@ function Predictor:Break()
 	-- end
 	-- PredictListFrame.spells = {};
 end
+
+function Predictor:UpdateAccuracyTextVisibility()
+	if a.VisShowRankAccuracy then 
+		rankText:Show();
+	else
+		rankText:Hide();
+	end
+	if a.VisShowPredAccuracy then 
+		likelihoodText:Show();
+	else
+		likelihoodText:Hide();
+	end
+end
 	
 function PredictListFrame_SpellWasCast(spellName)
 	if not a.HideVisualizations then 
@@ -363,8 +376,8 @@ function PredictListFrame_SpellWasCast(spellName)
 			UpdateRankHistory(#PredictListFrame.spells);
 			UpdateLikelihoodHistory(0);
 		end
-		UpdateRankHistory(rank);
-		UpdateLikelihoodHistory(likelihood);
+		if a.VisShowRankAccuracy then UpdateRankHistory(rank); end;
+		if a.VisShowPredAccuracy then UpdateLikelihoodHistory(likelihood); end;
 		if a.TrialMode then 
 			PredictorTrialsAddon:LogSpellAccuracy(rank, likelihood);
 		end

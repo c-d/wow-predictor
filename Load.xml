@@ -6,4 +6,5 @@
 	<Script file="Collector.lua"/>
 	<Script file="MarkovAnalyser.lua"/>
 	<Script file="Predictor.lua"/>
+	<Script file="PrVisScroll.lua"/>
 </Ui>

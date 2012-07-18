@@ -10,7 +10,7 @@ function PredictorAddon:OnInitialize()
 	--if not a.EvaluationMode then 
 		PredictorAddon:setupOptions(); 
 	--end
-	Predictor:InitAll();
+	PrVisScroll:InitAll();
 	Messenger.CheckOnline();
 end
 
@@ -245,7 +245,7 @@ function PredictorAddon:setupOptions()
 						set = function(info, val)
 							a.VisIconSize = val;
 							PredictorAddon:SaveGlobalData();
-							Predictor:InitAll();
+							PrVisScroll:InitAll();
 						end,
 						width = "full"
 					},
@@ -267,7 +267,7 @@ function PredictorAddon:setupOptions()
 						type = "toggle",
 						set = function(info, val) 
 							a.VisShowRankAccuracy = val;
-							Predictor:UpdateAccuracyTextVisibility();
+							PrVisScroll:UpdateAccuracyTextVisibility();
 						end,
 						get = function()
 							return a.VisShowRankAccuracy;
@@ -279,7 +279,7 @@ function PredictorAddon:setupOptions()
 						type = "toggle",
 						set = function(info, val) 
 							a.VisShowPredAccuracy = val;
-							Predictor:UpdateAccuracyTextVisibility();
+							PrVisScroll:UpdateAccuracyTextVisibility();
 						end,
 						get = function()
 							return a.VisShowPredAccuracy;
@@ -420,11 +420,11 @@ end
 function PredictorAddon:ResetData()
 	 MarkovAnalyser:reset(); 
 	 MarkovAnalyser:fullRefresh()
-	 Predictor:InitAll();
+	 PrVisScroll:InitAll();
 end
 
 function PredictorAddon:ResetVisualizations()
-	 Predictor:InitAll();
+	 PrVisScroll:InitAll();
 end
 
 function PredictorAddon:GetEventCount()

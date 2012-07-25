@@ -85,22 +85,19 @@ function Predictor:PredictActions()
 				total = p["total"]
 				for i=1,#p["links"] do	
 					spell = p["links"][i]["event"];
-					-- cut off the first part of the id ("player" or "target", usually)
+					-- cut off the first part of the id ("player" or "target" usually)
 					splitter = string.find(spell, "&");
 					spell = string.sub(spell, splitter+1);
 					count = round((p["links"][i]["count"] / total) * 100);
-					--print ("Adding to predictor: " .. spell .. ", " .. count);
 					if iconInSpellbook(spell) then
 						table.insert(a.PredictedEvents, {spell, count});
-					else
-						--if a.DebugMode then print("Ability not found in spellbook: " .. spell) end;
 					end
 				end
 				-- finally, sort the table to show most likely first
 				table.sort(a.PredictedEvents, function(a,b) return a[2] > b[2] end)
 			end
 		end
-		PrVisScroll:UpdateContents();
+		PrVisScroll:Update();
 	end
 end
 

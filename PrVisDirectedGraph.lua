@@ -1,5 +1,5 @@
 -- Predictor visualization
--- Scrolls visualization data horizontally as it is used.
+-- Arranges predictions into a directed graph
 
 local AddonName, a = ...
 

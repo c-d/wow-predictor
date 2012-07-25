@@ -330,6 +330,7 @@ function PredictorAddon:LoadGlobalData()
 	a.VisDragEnabled = loadFromConfig("VisDragEnabled", false);
 	a.VisShowRankAccuracy = loadFromConfig("VisShowRankAccuracy", false);
 	a.VisShowPredAccuracy = loadFromConfig("VisShowPredAccuracy", false);
+	--a.SelectedVis = loadFromConfig("SelectedVis", "PrVisScroll");
 	
 	a.EvaluationMode = loadFromConfig("EvaluationMode", false);
 	
@@ -375,6 +376,8 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["EventLog"] = a.EventLog;
 	PredictorAddonConfig["ProcessEvents"] = a.ProcessEvents;
 	PredictorAddonConfig["MaxTimeBetweenEvents"] = a.MaxTimeBetweenEvents;
+	
+	--PredictorAddonConfig["SelectedVis"] = a.SelectedVis;
 	
 	PredictorAddonConfig["VisMoveSpeed"] = a.VisMoveSpeed;
 	PredictorAddonConfig["VisAlphaDecay"] = a.VisAlphaDecay;

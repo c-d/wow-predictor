@@ -1,4 +1,4 @@
---local AddonName, a = ...
+local AddonName, a = ...
 local m = Messenger
 
 MarkovAnalyser = {}
@@ -22,13 +22,15 @@ frame:SetScript("OnUpdate", function(self, ...)
 				if #EventBuffer > 0 then
 					-- Now that this is filtered, let predictor know that something relevant occurred.
 					-- Do this whenever eventbuffer isn't empty - don't want to wait for it to be ready
-					if lastEvent ~= EventBuffer[#EventBuffer] then Predictor:AddEventForPrediction(EventBuffer[#EventBuffer]);	end;
+					if lastEvent ~= EventBuffer[#EventBuffer] then 
+						Predictor:AddEventForPrediction(EventBuffer[#EventBuffer]);	
+					end;
 				end
-				if #EventBuffer > a.Size[PlayerName] then
+				if #EventBuffer > a.Size[UnitName("player")] then
 					--dprint(EventBuffer[#EventBuffer][2][2]);
 					-- Now make a sub-buffer of pre-sequence + result
 					sub = {};
-					for i=1,a.Size[PlayerName] + 1 do
+					for i=1,a.Size[UnitName("player")] + 1 do
 						sub[i] = EventBuffer[i];
 					end
 					markov:refresh(sub);
@@ -63,7 +65,9 @@ function filterEvents(buffer)
 			eType = buffer[i][1];
 			if buffer[i][1]:find("UNIT_SPELLCAST_SUCCEEDED") then	-- ignoring other event types for now
 				if buffer[i][2][1] == "player" then -- only process player actions - this can be changed later if wanted.
-					table.insert(result, buffer[i]);
+					if buffer[i][2][2] ~= "Auto Shot" then -- Here add individual filters...
+						table.insert(result, buffer[i]);
+					end
 				end
 			end
 		end
@@ -89,23 +93,23 @@ function markov:refresh(buffer)
 		end
 	end
 	changed = false;
-	if #events > a.Size[PlayerName] then	-- don't want to build any short chains
-		Queue:Init(events, a.Size[PlayerName]);
-		for i=a.Size[PlayerName] + 1,#events do
+	if #events > a.Size[UnitName("player")] then	-- don't want to build any short chains
+		Queue:Init(events, a.Size[UnitName("player")]);
+		for i=a.Size[UnitName("player")] + 1,#events do
 			--print(times[i] - times[i - 1]);
 			if times[i] - times[i - 1] < a.MaxTimeBetweenEvents then
 				--print(times[i] .. " -- " .. times[i - 1]);
 				key = Queue:GetString();
 				--print(events[a.MarkovChainLength] .. " - " .. key);
-				chain = a.Models[PlayerName][key]
+				chain = a.Models[UnitName("player")][key]
 				if not chain then 
 					dprint("New chain: " .. key);
 					chain = Chain.Init(key)
-					a.Models[PlayerName][key] = chain;
+					a.Models[UnitName("player")][key] = chain;
 					changed = true;
 				end
 				-- finally, the predicted event
-				Chain.AddEvent(chain, events[a.Size[PlayerName] + 1]);
+				Chain.AddEvent(chain, events[a.Size[UnitName("player")] + 1]);
 				m.Broadcast(Chain.ToString(chain));
 				Chain.AddEvent(chain, events[i]);
 			else
@@ -115,13 +119,13 @@ function markov:refresh(buffer)
 		end
 	end
 	entries = 0;
-	for k,v in pairs(a.Models[PlayerName]) do
+	for k,v in pairs(a.Models[UnitName("player")]) do
 		eventCodes = split(v["prefix"], "#");
-		if #eventCodes == a.Size[PlayerName] then
+		if #eventCodes == a.Size[UnitName("player")] then
 			entries = entries + 1;
 		end
 	end
-	if changed then dprint("MarkovAnalyzer updated. Chain length = " .. a.Size[PlayerName] .. ". " .. entries .. " pre-sequences recognized."); end
+	if changed then dprint("MarkovAnalyzer updated. Chain length = " .. a.Size[UnitName("player")] .. ". " .. entries .. " pre-sequences recognized."); end
 end
 
 
@@ -144,8 +148,8 @@ end
 -- Perform a dump of all data to a specified subscriber.
 function markov:dumpTo(subscriber)
 	print("Dumping data to subscriber " .. subscriber);
-	for k,v in pairs(a.Models[PlayerName]) do
-		chain = a.Models[PlayerName][k]
+	for k,v in pairs(a.Models[UnitName("player")]) do
+		chain = a.Models[UnitName("player")][k]
 		if chain then
 			--print("dumping");
 			m.DumpTo(Chain.ToString(chain), subscriber);
@@ -250,7 +254,7 @@ function Chain:InitFromString(model, input)
 	--print(" -- PRE: " .. key);
 	if not a.Models[model] then 
 		a.Models[model] = {};
-		a.Size[model] = a.Size[PlayerName];
+		a.Size[model] = a.Size[UnitName("player")];
 	end;
 	chain = a.Models[model][key]
 	if not chain then 

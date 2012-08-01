@@ -1,8 +1,8 @@
-AddonName, a = ...	-- WoW passes in the addon name + persistent addon table as arguments
+local AddonName, a = ...	-- WoW passes in the addon name + persistent addon table as arguments
 
 PredictorAddon = LibStub("AceAddon-3.0"):NewAddon(AddonName, "AceComm-3.0", "AceConsole-3.0")
-PlayerName = UnitName("player")
-local OptionsFrame = nil
+
+UnitName("player") = UnitName("player")
 
 function PredictorAddon:OnInitialize()
 	PredictorAddon:LoadGlobalData();
@@ -47,7 +47,7 @@ function PredictorAddon:setupOptions()
 											entries = entries + 1;
 										end
 									end
-							if PlayerName == a.ModelInUse then
+							if UnitName("player") == a.ModelInUse then
 								return entries .. " unique sequences recognized from " .. #a.EventLog .. " total events.";
 							else return "Using external model, " .. entries .. " sequences recognized.";
 							end
@@ -113,8 +113,8 @@ function PredictorAddon:setupOptions()
 							for k,v in pairs(a.Models) do
 								name = k
 								desc = k
-								if k == PlayerName then
-									desc = PlayerName .. " (Player)"
+								if k == UnitName("player") then
+									desc = UnitName("player") .. " (Player)"
 								end
 								local info = a.SourceInfo[name]
 								if info then
@@ -136,7 +136,7 @@ function PredictorAddon:setupOptions()
 						desc = "Subscribe to a subscription model",
 						type = "input",
 						set = function(info, val) 
-							Messenger.SubscribeToBroadcaster(PlayerName, val); 
+							Messenger.SubscribeToBroadcaster(UnitName("player"), val); 
 						end,
 						width = "full"
 					},
@@ -147,11 +147,11 @@ function PredictorAddon:setupOptions()
 						type = "execute",
 						confirm = true,
 						func = function(info, val) 
-							Messenger.UnSubscribeToBroadcaster(PlayerName, a.ModelInUse); 
+							Messenger.UnSubscribeToBroadcaster(UnitName("player"), a.ModelInUse); 
 							a.Models[a.ModelInUse] = nil;
 							a.Size[a.ModelInUse] = nil;
 							a.SourceInfo[a.ModelInUse] = nil;
-							a.ModelInUse = PlayerName;
+							a.ModelInUse = UnitName("player");
 							PredictorAddon:SaveGlobalData();
 						end,
 					},
@@ -299,10 +299,10 @@ function PredictorAddon:setupOptions()
 
 	-- elseif msg:find("subscribe") then
 		-- subscriber = msg:gsub("subscribe ", "");
-		-- m.SubscribeToBroadcaster(PlayerName, subscriber);
+		-- m.SubscribeToBroadcaster(UnitName("player"), subscriber);
 	-- elseif msg:find("unsubscribe") then
 		-- subscriber = msg:gsub("unsubscribe ", "");
-		-- m.UnSubscribeToBroadcaster(PlayerName, subscriber);
+		-- m.UnSubscribeToBroadcaster(UnitName("player"), subscriber);
 
 end
 
@@ -313,7 +313,7 @@ function PredictorAddon:LoadGlobalData()
 	-- Models contains all models, indexed by player name
 	a.Models = loadFromConfig("Models");		
 	a.DebugMode = loadFromConfig("DebugMode");	
-	a.ModelInUse = loadFromConfig("ModelInUse", PlayerName);
+	a.ModelInUse = loadFromConfig("ModelInUse", UnitName("player"));
 	a.Size = loadFromConfig("Size");
 	a.Subscribers = loadFromConfig("Subscribers");
 	a.SourceInfo = loadFromConfig("SourceInfo");
@@ -335,15 +335,15 @@ function PredictorAddon:LoadGlobalData()
 	a.EvaluationMode = loadFromConfig("EvaluationMode", false);
 	
 	-- Note that it should not be necessary to set the size of the model in use
-	if not a.Size[PlayerName] then a.Size[PlayerName] = 2; end;
+	if not a.Size[UnitName("player")] then a.Size[UnitName("player")] = 2; end;
 	-- Also ensure that we have initialized the active model
 	if not a.Models[a.ModelInUse] then 
 		a.Models[a.ModelInUse] = {}; 
 		dprint("PredictorCore: creating new dictionary for " ..  a.ModelInUse);
 	end
 	-- Subscription info	
-	if not a.SourceInfo[PlayerName] then 
-		a.SourceInfo[PlayerName] = PredictorAddon:PlayerInfo(); 
+	if not a.SourceInfo[UnitName("player")] then 
+		a.SourceInfo[UnitName("player")] = PredictorAddon:PlayerInfo(); 
 	end;
 	
 	-- May not be necessary, but just in case
@@ -431,7 +431,7 @@ function PredictorAddon:ResetVisualizations()
 end
 
 function PredictorAddon:GetEventCount()
-	return #a.EventLog
+	return #a.EventLog;
 end
 
 -- The following settings are specific to individual trial sessions, so they are not saved.

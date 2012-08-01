@@ -353,7 +353,7 @@ function PrVisScroll:SpellWasCast(spellName)
 		if a.VisShowRankAccuracy then PrVisScroll:UpdateRankHistory(rank); end;
 		if a.VisShowPredAccuracy then PrVisScroll:UpdateLikelihoodHistory(likelihood); end;
 		if a.TrialMode then 
-			PredictorTrialsAddon:LogSpellAccuracy(rank, likelihood);
+			PredictorTrialsAddon:LogSpellAccuracy(rank, likelihood, spellName, PredictListFrame.spells);
 		end
 		--dprint(rank .. " - " .. likelihood);
 	end

@@ -1,3 +1,4 @@
+local AddonName, a = ...
 local frame = CreateFrame("Frame");	-- for catching events
 
 --local comm = LibStub("AceComm-3.0")

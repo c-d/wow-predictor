@@ -47,11 +47,12 @@ function PredictorAddon:setupOptions()
 									entries = entries + 1;
 								end
 							end
-							if a.EventLog[a.ModelInUse] then
-								return entries .. " unique sequences recognized from " .. #a.EventLog[a.ModelInUse] .. " total events.";
-							else
-								return "No data found"
+							local eventCount = 0;
+							local subs = split(a.ModelInUse, ",");
+							for i=1, #subs do
+								if a.EventLog[subs[i]] then eventCount = eventCount + #a.EventLog[subs[i]]; end;
 							end
+							return entries .. " unique sequences recognized from " .. eventCount .. " total events.";
 						end
 					},
 					size = {
@@ -94,20 +95,86 @@ function PredictorAddon:setupOptions()
 						end,
 						set = function(info, val)
 							a.MaxTimeBetweenEvents = val;
+							MarkovAnalyser:fullRefresh(a.ModelInUse);
 						end,
 						width = "full"
 					},
-					selectmodel = {
+					-- selectmodel = {
+						-- order = 4,
+						-- name = "Select model",
+						-- desc = "Select the model used for prediction.",
+						-- type = "select",
+						-- set = function(info, val)
+							-- a.ModelInUse = val;
+							-- PredictorAddon:SaveGlobalData();
+						-- end,
+						-- get = function()
+							-- return a.ModelInUse;
+						-- end,
+						-- values = function()
+							-- result = {};
+							-- for k,v in pairs(a.Subscriptions) do
+								-- name = k
+								-- desc = k
+								-- if k == UnitName("player") then
+									-- desc = UnitName("player") .. " (Player)"
+								-- end
+								-- local info = a.Subscriptions[name]
+								-- if info then
+									-- if info[3] then	-- This is to check whether or not there are actually any talents specified.
+										-- desc = desc .. " - Level " .. info[2] .. " " .. info[3] .. " " .. info[1] .. 
+												-- " (" .. info[4] .. "/" .. info[5] .. "/" .. info[6] .. ")"
+									-- end
+								-- end
+								-- result[name] = desc;
+							-- end
+							-- return result;
+						-- end,
+						-- style = "dropdown",
+						-- width = "full"
+					-- },
+					selectmodels = {
 						order = 4,
-						name = "Select model",
-						desc = "Select the model used for prediction.",
-						type = "select",
-						set = function(info, val)
-							a.ModelInUse = val;
+						name = "Select models",
+						desc = "Select the models used for prediction. At least one model must be selected. Selecting multiple models will combine event data to create a single set of predictions.",
+						type = "multiselect",
+						set = function(info, name, val)
+							local subs = split(a.ModelInUse, ",");
+							-- for i=1, #subs do
+								-- if subs[i] == "" then
+									-- print("EMPTY STRING FOUND");
+									-- tremove(subs, i);
+								-- end
+							-- end
+							if val then
+								tinsert(subs, name);
+							else
+								for i=1, #subs do
+									if subs[i] == name then
+										tremove(subs, i);
+										if #subs == 0 then
+											local name = UnitName("player");
+											tinsert(subs, name);
+										end
+										break;
+									end
+								end
+							end
+							table.sort(subs);	-- Now make it alphabetical (so the keys always match regardless of the order in which they were selected)
+							a.ModelInUse = table.concat(subs, ",");
+							print("Core: " .. a.ModelInUse);
 							PredictorAddon:SaveGlobalData();
+							PredictorAddon:LoadGlobalData();
+							print("Core: " .. a.ModelInUse);
+							MarkovAnalyser:fullRefresh(a.ModelInUse);
 						end,
-						get = function()
-							return a.ModelInUse;
+						get = function(info, val)
+							--print(a.ModelInUse);
+							local models = split(a.ModelInUse, ",");
+							for i=1, #models do
+								if models[i] == val then return true; end;
+							end
+							return false;
 						end,
 						values = function()
 							result = {};
@@ -124,11 +191,12 @@ function PredictorAddon:setupOptions()
 												" (" .. info[4] .. "/" .. info[5] .. "/" .. info[6] .. ")"
 									end
 								end
+								--print(name);
 								result[name] = desc;
 							end
 							return result;
 						end,
-						style = "dropdown",
+						--style = "dropdown",
 						width = "full"
 					},
 					subupdatefreq = {
@@ -216,7 +284,7 @@ function PredictorAddon:setupOptions()
 						desc = "Delete all data. Warning: This cannot be reverted.",
 						type = "execute",
 						confirm = true;
-						func = function() MarkovAnalyser:reset(); MarkovAnalyser:fullRefresh() end,
+						func = function() MarkovAnalyser:reset(); MarkovAnalyser:fullRefresh(a.ModelInUse) end,
 						width = "full"
 					}
 				}
@@ -360,7 +428,7 @@ function PredictorAddon:LoadGlobalData()
 	a.ModelInUse = loadFromConfig("ModelInUse", UnitName("player"));
 	a.Size = loadFromConfig("Size");
 	a.Subscriptions = loadFromConfig("Subscriptions");
-	a.EventLog = loadFromConfig("EventLog");
+	a.EventLog = loadFromConfig("SEventLog", nil, true);
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
 	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 5);
 	a.SubscriptionUpdateFrequency = loadFromConfig("SubscriptionUpdateFrequency", 60);
@@ -378,7 +446,8 @@ function PredictorAddon:LoadGlobalData()
 	
 	a.EvaluationMode = loadFromConfig("EvaluationMode", false);
 	
-	-- Note that it should not be necessary to set the size of the model in use
+	
+	if not a.Size[a.ModelInUse] then a.Size[a.ModelInUse] = 2; end;
 	if not a.Size[UnitName("player")] then a.Size[UnitName("player")] = 2; end;
 	-- Also ensure that we have initialized the active model
 	-- if not a.Models[UnitName("player")] then 
@@ -405,7 +474,7 @@ end
 -- Loads an object from the saved addon config.
 -- If the object does not exist, it is initialized and returned.
 -- Default init value is {}, unless explicitly provided.
-function loadFromConfig(id, default)
+function loadFromConfig(id, default, serialized)
 	result = PredictorAddonConfig[id]
 	if not result then
 		if default then
@@ -413,21 +482,28 @@ function loadFromConfig(id, default)
 		else
 			result = {};
 		end
+	else
+		if serialized then 
+			success, result = AceSerializer:Deserialize(result);
+		end
 	end
 	return result;
 end
 
 function PredictorAddon:SaveGlobalData()
 	dprint("PredictorCore: Saving data");
-	PredictorAddonConfig["Models"] = a.Models;
+	--PredictorAddonConfig["Models"] = a.Models;
 	PredictorAddonConfig["DebugMode"] = a.DebugMode;
 	PredictorAddonConfig["ModelInUse"] = a.ModelInUse;
 	PredictorAddonConfig["Size"] = a.Size;
 	PredictorAddonConfig["Subscriptions"] = a.Subscriptions;
-	PredictorAddonConfig["EventLog"] = a.EventLog;
 	PredictorAddonConfig["ProcessEvents"] = a.ProcessEvents;
 	PredictorAddonConfig["MaxTimeBetweenEvents"] = a.MaxTimeBetweenEvents;
 	PredictorAddonConfig["SubscriptionUpdateFrequency"] = a.SubscriptionUpdateFrequency;
+	
+	PredictorAddonConfig["SEventLog"] = AceSerializer:Serialize(a.EventLog);
+	-- Uncomment this line for more readable config files (copies contents of SEventLog, so wasted file size)
+	--PredictorAddonConfig["EventLog"] = a.EventLog;
 	
 	--PredictorAddonConfig["SelectedVis"] = a.SelectedVis;
 	

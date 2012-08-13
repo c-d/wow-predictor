@@ -53,12 +53,23 @@ function markov:fullRefresh(source)
 		-- end
 	-- end
 	-- dprint("Existing sequences cleared: " .. count);
-	if not source then
-		source = UnitName("player");
+	local sources = split(source, ",");
+	if #sources == 0 then
+		local n = UnitName("player");
+		tinsert(sources, n);
 	end	
-	a.Models[source] = {};
+	local filteredBuffer = {};
+	for i=1, #sources do
+		local f = filterEvents(a.EventLog[sources[i]]);
+		for j=1, #f do
+			tinsert(filteredBuffer, f[j]);
+		end
+		--print("source: " .. sources[i] .. " -- " .. #f .. " found");
+	end
+	--print("processing " .. #filteredBuffer);
+	a.Models[sources] = {};
 	PredictorAddon:SaveGlobalData();
-	markov:refresh(filterEvents(a.EventLog[a.ModelInUse]), source);
+	markov:refresh(filteredBuffer, table.concat(sources, ","));
 end
 
 function filterEvents(buffer)
@@ -78,10 +89,10 @@ function filterEvents(buffer)
 	return result;
 end
 
--- Note that this only updates THIS player model, not the currently active player model (e.g. from a subscriber source). A model being ACTIVE means it is being used for prediction.
 function markov:refresh(buffer, modelName)
 	local events = {}	-- refresh events
 	local times = {};
+	a.Models[modelName] = {}; -- currently recreating model from scratch every time... maybe not ideal for performance
 	if buffer then
 		for i=1,# buffer do
 			eType = buffer[i][1];
@@ -97,8 +108,6 @@ function markov:refresh(buffer, modelName)
 		end
 	end
 	changed = false;
-	-- PROBLEM:
-	-- THIS IS ADDING NEW SEQUENCES TO PLAYER CHAINS ONLY
 	if #events > a.Size[modelName] then	-- don't want to build any short chains
 		Queue:Init(events, a.Size[modelName]);
 		for i=a.Size[modelName] + 1,#events do
@@ -119,7 +128,7 @@ function markov:refresh(buffer, modelName)
 				--m.Broadcast(Chain.ToString(chain));	-- TODO: remove once broadcasting is changed
 				Chain.AddEvent(chain, events[i]);
 			else
-				Predictor:Break();
+				--Predictor:Break();
 			end
 			Queue:Add(events[i]);	-- get next event
 		end

@@ -1,7 +1,7 @@
 local AddonName, a = ...
 local frame = CreateFrame("Frame");	-- for catching events
 
-local Serializer = LibStub("AceSerializer-3.0")
+AceSerializer = LibStub("AceSerializer-3.0")
 
 Messenger = {}
 local m = Messenger
@@ -83,8 +83,13 @@ end
 -- end
 
 -- Request an update from a broadcaster, for all events that have occurred since lastUpdate
-function m.RequestUpdate(lastUpdate, broadcasterName)
-	PredictorAddon:SendCommMessage(AddonCode, REQUEST_UPDATE .. lastUpdate, "WHISPER", broadcasterName);
+function m.RequestUpdate(lastUpdate, modelName)
+	local broadcasters = split(modelName, ",")
+	for i=1, #broadcasters do
+		if broadcasters[i] ~= UnitName("player") then
+			PredictorAddon:SendCommMessage(AddonCode, REQUEST_UPDATE .. lastUpdate, "WHISPER", broadcasters[i]);
+		end
+	end
 end
 
 -- Generate an update in response to an update request (may be no update needed)
@@ -101,22 +106,24 @@ function m.HandleUpdateRequest(src, lastUpdate)
 			tinsert(newEvents, 1, playerEvents[i]); -- insert at beginning of table (since we are going backwards)
 			i = i - 1;
 		end
-		if i ~= #playerEvents then dprint("Messenger: Sending " .. #playerEvents - i .. " new events to " .. src .. "."); end
+		--if i ~= #playerEvents then dprint("Messenger: Sending " .. #playerEvents - i .. " new events to " .. src .. "."); end
 	else
 		newEvents = playerEvents;
 	end
-	PredictorAddon:SendCommMessage(AddonCode, UPDATE .. Serializer:Serialize(newEvents), "WHISPER", src);
+	PredictorAddon:SendCommMessage(AddonCode, UPDATE .. AceSerializer:Serialize(newEvents), "WHISPER", src);
 end
 
 function m.HandleUpdate(src, msg)
-	local success, events = Serializer:Deserialize(msg);
+	local success, events = AceSerializer:Deserialize(msg);
 	if success then
 		if #events > 0 then
 			for i=1, #events do
 				tinsert(a.EventLog[src], events[i]);
 			end
-			dprint("Messenger: " .. #events .. " new events received from " .. src .. ".");
-			MarkovAnalyser:fullRefresh(src);
+			--dprint("Messenger: " .. #events .. " new events received from " .. src .. ".");
+			if string.find(a.ModelInUse, src) then	-- Only update model if the updating source is part of the model we're interested in
+				MarkovAnalyser:fullRefresh(a.ModelInUse);
+			end
 		end
 	else
 		dprint("Messenger: Error deserializing message from " .. src .. ": " .. events);
@@ -125,11 +132,11 @@ end
 
 
 function m.ParsePlayerInfo(src, msg)
-	print("received");
 	local class, level, primarytalent, talent1, talent2, talent3 = split(msg, ",");
 	a.Subscriptions[src] = class, level, primarytalent, talent1, talent2, talent3;
 	--TODO not sure if this should be here or elsewhere
 	a.Models[src] = {};
+	a.EventLog[src] = {};
 	m.RequestUpdate(0, src);
 end
 
@@ -138,33 +145,37 @@ end
 frame:SetScript("OnUpdate", function(self, elapsed)
 	timer = timer + elapsed
 	if timer > a.SubscriptionUpdateFrequency then
-		if a.ModelInUse ~= UnitName("player") then
-			local lastUpdate = 0;
-			if a.EventLog[a.ModelInUse] and #a.EventLog[a.ModelInUse] > 0 then 
-				lastUpdate = a.EventLog[a.ModelInUse][#a.EventLog[a.ModelInUse]][3] 
+		m.CheckOnline();
+		for src,v in pairs(a.Subscriptions) do
+			
+			if src ~= UnitName("player") and Online[name] then
+				local lastUpdate = 0;
+				if a.EventLog[src] and #a.EventLog[src] > 0 then 
+					lastUpdate = a.EventLog[src][#a.EventLog[src]][3] 
+				end
+				m.RequestUpdate(lastUpdate, src);
+				timer = 0;
 			end
-			m.RequestUpdate(lastUpdate, a.ModelInUse);
-			timer = 0;
 		end
 	end
 end);
 
--- function m.CheckOnline()
-	-- for i=1, GetNumFriends() do
-		-- for name,_ in pairs(a.Subscriptions) do
-			-- fname,_,_,_, fconnect = GetFriendInfo(i);
-			-- if fname == name then
-				-- if fconnect then
-					-- if a.DebugMode then print(name .. " is connected. Continuing/resuming update requests to this subscription source."); end;
-					-- m.RequestUpdate(a.EventLog[name][#a.EventLog[name]][3],name);
-					-- Online[name] = true;
-				-- else
-					-- if a.DebugMode then print(fname .. " is not connected. Pausing update requests to this subscription source."); end;
-					-- Online[name] = false;
-				-- end
-				-- break;
-			-- end
-		-- end
-		-- i = i + 1;
-	-- end
--- end
+function m.CheckOnline()
+	for name,_ in pairs(a.Subscriptions) do
+		for i=1, GetNumFriends() do
+			local fname,_,_,_, fconnect = GetFriendInfo(i);
+			if fname == name then
+				if fconnect then
+					if a.DebugMode and not Online[name] then print(name .. " is connected. Continuing/resuming update requests to this subscription source."); end;
+					m.RequestUpdate(a.EventLog[name][#a.EventLog[name]][3],name);
+					Online[name] = true;
+				else
+					if a.DebugMode and Online[name] then print(fname .. " is not connected. Pausing update requests to this subscription source."); end;
+					Online[name] = false;
+				end
+				break;
+			end
+			i = i + 1;
+		end
+	end
+end

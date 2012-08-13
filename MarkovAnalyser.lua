@@ -33,7 +33,7 @@ frame:SetScript("OnUpdate", function(self, ...)
 					for i=1,a.Size[UnitName("player")] + 1 do
 						sub[i] = EventBuffer[i];
 					end
-					markov:refresh(sub);
+					markov:refresh(sub, UnitName("player"));
 					tremove(EventBuffer,1); 
 				end
 			end
@@ -42,7 +42,7 @@ frame:SetScript("OnUpdate", function(self, ...)
 	end
 end);
 
-function markov:fullRefresh()
+function markov:fullRefresh(source)
 	-- Commented out: Just delete data for current size.
 	-- local count = 0;
 	-- for k,v in pairs(a.Models[a.ModelInUse]) do
@@ -53,9 +53,12 @@ function markov:fullRefresh()
 		-- end
 	-- end
 	-- dprint("Existing sequences cleared: " .. count);
-	a.Models[a.ModelInUse] = {};
+	if not source then
+		source = UnitName("player");
+	end	
+	a.Models[source] = {};
 	PredictorAddon:SaveGlobalData();
-	markov:refresh(filterEvents(a.EventLog));
+	markov:refresh(filterEvents(a.EventLog[a.ModelInUse]), source);
 end
 
 function filterEvents(buffer)
@@ -75,8 +78,8 @@ function filterEvents(buffer)
 	return result;
 end
 
--- Note that this only updates THIS player model, not the currently active player model. A model being ACTIVE means it is being used for prediction.
-function markov:refresh(buffer)
+-- Note that this only updates THIS player model, not the currently active player model (e.g. from a subscriber source). A model being ACTIVE means it is being used for prediction.
+function markov:refresh(buffer, modelName)
 	local events = {}	-- refresh events
 	local times = {};
 	if buffer then
@@ -88,29 +91,32 @@ function markov:refresh(buffer)
 				if actor == "player" then -- only process player actions - this can be changed later if wanted.
 					table.insert(events, actor .. "&" .. action);
 					table.insert(times, buffer[i][3]);
+					--print(action);
 				end
 			end
 		end
 	end
 	changed = false;
-	if #events > a.Size[UnitName("player")] then	-- don't want to build any short chains
-		Queue:Init(events, a.Size[UnitName("player")]);
-		for i=a.Size[UnitName("player")] + 1,#events do
+	-- PROBLEM:
+	-- THIS IS ADDING NEW SEQUENCES TO PLAYER CHAINS ONLY
+	if #events > a.Size[modelName] then	-- don't want to build any short chains
+		Queue:Init(events, a.Size[modelName]);
+		for i=a.Size[modelName] + 1,#events do
 			--print(times[i] - times[i - 1]);
 			if times[i] - times[i - 1] < a.MaxTimeBetweenEvents then
 				--print(times[i] .. " -- " .. times[i - 1]);
 				key = Queue:GetString();
-				--print(events[a.MarkovChainLength] .. " - " .. key);
-				chain = a.Models[UnitName("player")][key]
+				--print(key);
+				chain = a.Models[modelName][key]
 				if not chain then 
-					dprint("New chain: " .. key);
+					--dprint("New chain: " .. key);
 					chain = Chain.Init(key)
-					a.Models[UnitName("player")][key] = chain;
+					a.Models[modelName][key] = chain;
 					changed = true;
 				end
 				-- finally, the predicted event
-				Chain.AddEvent(chain, events[a.Size[UnitName("player")] + 1]);
-				m.Broadcast(Chain.ToString(chain));
+				Chain.AddEvent(chain, events[a.Size[modelName] + 1]);
+				--m.Broadcast(Chain.ToString(chain));	-- TODO: remove once broadcasting is changed
 				Chain.AddEvent(chain, events[i]);
 			else
 				Predictor:Break();
@@ -118,14 +124,16 @@ function markov:refresh(buffer)
 			Queue:Add(events[i]);	-- get next event
 		end
 	end
-	entries = 0;
-	for k,v in pairs(a.Models[UnitName("player")]) do
-		eventCodes = split(v["prefix"], "#");
-		if #eventCodes == a.Size[UnitName("player")] then
-			entries = entries + 1;
+	if changed then 
+		entries = 0;
+		for k,v in pairs(a.Models[modelName]) do
+			eventCodes = split(v["prefix"], "#");
+			if #eventCodes == a.Size[modelName] then
+				entries = entries + 1;
+			end
 		end
+		dprint("MarkovAnalyzer updated. Model name = " .. modelName .. ". Chain length = " .. a.Size[modelName] .. ". " .. entries .. " pre-sequences recognized."); 
 	end
-	if changed then dprint("MarkovAnalyzer updated. Chain length = " .. a.Size[UnitName("player")] .. ". " .. entries .. " pre-sequences recognized."); end
 end
 
 
@@ -160,6 +168,7 @@ end
 function markov:reset()
 	a.Models[a.ModelInUse] = {}
 	a.EventLog = {};
+	a.EventLog[UnitName("player")] = {};
 	PredictorAddon:SaveGlobalData();
 	print("MarkovAnalyser: Data erased");
 end

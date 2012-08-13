@@ -2,7 +2,7 @@ local AddonName, a = ...	-- WoW passes in the addon name + persistent addon tabl
 
 PredictorAddon = LibStub("AceAddon-3.0"):NewAddon(AddonName, "AceComm-3.0", "AceConsole-3.0")
 
-UnitName("player") = UnitName("player")
+--UnitName("player") = UnitName("player")
 
 function PredictorAddon:OnInitialize()
 	PredictorAddon:LoadGlobalData();
@@ -11,7 +11,7 @@ function PredictorAddon:OnInitialize()
 		PredictorAddon:setupOptions(); 
 	--end
 	PrVisScroll:InitAll();
-	Messenger.CheckOnline();
+	--Messenger.CheckOnline();
 end
 
 function PredictorAddon:OnEnable()
@@ -41,15 +41,16 @@ function PredictorAddon:setupOptions()
 						fontSize = "medium",
 						name = function()
 							entries = 0;
-									for k,v in pairs(a.Models[a.ModelInUse]) do
-										eventCodes = split(v["prefix"], "#");
-										if #eventCodes == a.Size[a.ModelInUse] then
-											entries = entries + 1;
-										end
-									end
-							if UnitName("player") == a.ModelInUse then
-								return entries .. " unique sequences recognized from " .. #a.EventLog .. " total events.";
-							else return "Using external model, " .. entries .. " sequences recognized.";
+							for k,v in pairs(a.Models[a.ModelInUse]) do
+								eventCodes = split(v["prefix"], "#");
+								if #eventCodes == a.Size[a.ModelInUse] then
+									entries = entries + 1;
+								end
+							end
+							if a.EventLog[a.ModelInUse] then
+								return entries .. " unique sequences recognized from " .. #a.EventLog[a.ModelInUse] .. " total events.";
+							else
+								return "No data found"
 							end
 						end
 					},
@@ -67,19 +68,19 @@ function PredictorAddon:setupOptions()
 						set = function(info, val) 
 							a.Size[a.ModelInUse] = val;
 							PredictorAddonConfig["Size"] = a.Size;
-							MarkovAnalyser:fullRefresh();
+							MarkovAnalyser:fullRefresh(a.ModelInUse);
 						end,
 						width = "full"
 					},
-					simulateaccuracy = {
-						order = 2,
-						name = "Estimate accuracy",
-						desc = "Run a simulation to estimate the accuracy of this model",
-						type = "execute",
-						func = function()
-							--MarkovAnalyser:Simulate();
-						end
-					},
+					-- simulateaccuracy = {
+						-- order = 2,
+						-- name = "Estimate accuracy",
+						-- desc = "Run a simulation to estimate the accuracy of this model",
+						-- type = "execute",
+						-- func = function()
+							-- MarkovAnalyser:Simulate();
+						-- end
+					-- },
 					settimebetweenevents = {
 						order = 3,
 						name = "Max time between events",
@@ -110,13 +111,13 @@ function PredictorAddon:setupOptions()
 						end,
 						values = function()
 							result = {};
-							for k,v in pairs(a.Models) do
+							for k,v in pairs(a.Subscriptions) do
 								name = k
 								desc = k
 								if k == UnitName("player") then
 									desc = UnitName("player") .. " (Player)"
 								end
-								local info = a.SourceInfo[name]
+								local info = a.Subscriptions[name]
 								if info then
 									if info[3] then	-- This is to check whether or not there are actually any talents specified.
 										desc = desc .. " - Level " .. info[2] .. " " .. info[3] .. " " .. info[1] .. 
@@ -130,8 +131,24 @@ function PredictorAddon:setupOptions()
 						style = "dropdown",
 						width = "full"
 					},
+					subupdatefreq = {
+						order = 5,
+						name = "Model update frequency",
+						desc = "How often broadcasters should be polled for event updates. Setting this close to 1 approximates real-time updates.",
+						type = "range",
+						min = 1,
+						max = 300,
+						step = 1,
+						get = function()
+							return a.SubscriptionUpdateFrequency;
+						end,
+						set = function(info, val)
+							a.SubscriptionUpdateFrequency = val;
+						end,
+						width = "full"
+					},
 					subscribe = {
-						order = 6,
+						order = 8,
 						name = "Subscribe to new model",
 						desc = "Subscribe to a subscription model",
 						type = "input",
@@ -141,28 +158,36 @@ function PredictorAddon:setupOptions()
 						width = "full"
 					},
 					unsubscribe = {
-						order = 5,
+						order = 6,
 						name = "Unsubscribe",
 						desc = "Remove subscription for current model. This will delete all existing data for this model.",
 						type = "execute",
 						confirm = true,
 						func = function(info, val) 
-							Messenger.UnSubscribeToBroadcaster(UnitName("player"), a.ModelInUse); 
+							--Messenger.UnSubscribeToBroadcaster(UnitName("player"), a.ModelInUse); 
 							a.Models[a.ModelInUse] = nil;
 							a.Size[a.ModelInUse] = nil;
-							a.SourceInfo[a.ModelInUse] = nil;
+							a.Subscriptions[a.ModelInUse] = nil;
 							a.ModelInUse = UnitName("player");
 							PredictorAddon:SaveGlobalData();
-						end,
+						end
 					},
-					refresh = {
-						name = "Force refresh",
-						desc = "Force an update of predictive data, and checks for changes in online status of subscribers.",
+					update = {
+						order = 7,
+						name = "Force update",
+						desc = "Force an update of predictive data from the current broadcaster.",
 						type = "execute",
 						func = function() 
-							MarkovAnalyser:fullRefresh(); 
-							Messenger.CheckOnline(); 
-						end,
+							if a.ModelInUse ~= UnitName("player") then
+								local lastUpdate = 0;
+								if a.EventLog[a.ModelInUse] and #a.EventLog[a.ModelInUse] > 0 then 
+									lastUpdate = a.EventLog[a.ModelInUse][#a.EventLog[a.ModelInUse]][3] 
+								end
+								Messenger.RequestUpdate(lastUpdate, a.ModelInUse);
+							else
+								MarkovAnalyser:fullRefresh(); -- otherwise just refresh player model
+							end
+						end
 					},
 					dump = {
 						name = "Print",
@@ -261,6 +286,25 @@ function PredictorAddon:setupOptions()
 						end,
 						width = "full"
 					},
+					resetUI = {
+						name = "Reset defaults",
+						desc = "Reset the UI to default positioning/scaling",
+						type = "execute",
+						func = function() 
+								a.VisMoveSpeed = nil;
+								a.VisAlphaDecay = nil;
+								a.VisIconSize = nil;
+								a.VisPosX = nil;
+								a.VisPosY = nil;
+								a.VisPosAnchor = nil;
+								a.VisDragEnabled = nil;
+								a.VisShowRankAccuracy = nil;
+								a.VisShowPredAccuracy = nil;
+								PredictorAddon:SaveGlobalData()
+								PredictorAddon:LoadGlobalData()
+								PredictorAddon:ResetVisualizations()
+							end
+					},
 					showrankaccuracy = {
 						name = "Show ranking accuracy",
 						desc = "Accuracy rating for the previous [sequence size] actions, based on the rankings of the abilities used.",
@@ -315,11 +359,11 @@ function PredictorAddon:LoadGlobalData()
 	a.DebugMode = loadFromConfig("DebugMode");	
 	a.ModelInUse = loadFromConfig("ModelInUse", UnitName("player"));
 	a.Size = loadFromConfig("Size");
-	a.Subscribers = loadFromConfig("Subscribers");
-	a.SourceInfo = loadFromConfig("SourceInfo");
+	a.Subscriptions = loadFromConfig("Subscriptions");
 	a.EventLog = loadFromConfig("EventLog");
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
 	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 5);
+	a.SubscriptionUpdateFrequency = loadFromConfig("SubscriptionUpdateFrequency", 60);
 	
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
 	a.VisAlphaDecay = loadFromConfig("VisAlphaDecay", 0.002);
@@ -337,13 +381,21 @@ function PredictorAddon:LoadGlobalData()
 	-- Note that it should not be necessary to set the size of the model in use
 	if not a.Size[UnitName("player")] then a.Size[UnitName("player")] = 2; end;
 	-- Also ensure that we have initialized the active model
+	-- if not a.Models[UnitName("player")] then 
+		-- a.Models[UnitName("player")] = {}; 
+		-- dprint("PredictorCore: creating new dictionary for " ..  UnitName("player"));
+	-- end
 	if not a.Models[a.ModelInUse] then 
 		a.Models[a.ModelInUse] = {}; 
 		dprint("PredictorCore: creating new dictionary for " ..  a.ModelInUse);
 	end
+	if not a.EventLog[a.ModelInUse] then
+		a.EventLog[a.ModelInUse] = {};
+		dprint("PredictorCore: creating new event log for " .. a.ModelInUse);
+	end
 	-- Subscription info	
-	if not a.SourceInfo[UnitName("player")] then 
-		a.SourceInfo[UnitName("player")] = PredictorAddon:PlayerInfo(); 
+	if not a.Subscriptions[UnitName("player")] then 
+		a.Subscriptions[UnitName("player")] = PredictorAddon:PlayerInfo(); 
 	end;
 	
 	-- May not be necessary, but just in case
@@ -371,11 +423,11 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["DebugMode"] = a.DebugMode;
 	PredictorAddonConfig["ModelInUse"] = a.ModelInUse;
 	PredictorAddonConfig["Size"] = a.Size;
-	PredictorAddonConfig["Subscribers"] = a.Subscribers;
-	PredictorAddonConfig["SourceInfo"] = a.SourceInfo;
+	PredictorAddonConfig["Subscriptions"] = a.Subscriptions;
 	PredictorAddonConfig["EventLog"] = a.EventLog;
 	PredictorAddonConfig["ProcessEvents"] = a.ProcessEvents;
 	PredictorAddonConfig["MaxTimeBetweenEvents"] = a.MaxTimeBetweenEvents;
+	PredictorAddonConfig["SubscriptionUpdateFrequency"] = a.SubscriptionUpdateFrequency;
 	
 	--PredictorAddonConfig["SelectedVis"] = a.SelectedVis;
 	
@@ -431,7 +483,7 @@ function PredictorAddon:ResetVisualizations()
 end
 
 function PredictorAddon:GetEventCount()
-	return #a.EventLog;
+	return #a.EventLog[a.ModelInUse];
 end
 
 -- The following settings are specific to individual trial sessions, so they are not saved.

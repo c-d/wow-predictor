@@ -1,6 +1,6 @@
 local AddonName, a = ...
 
-local frame, events = CreateFrame("Frame"), {};
+--local frame, events = CreateFrame("Frame"), {};
 local SFHistory = {}
 a.PredictedEvents = {}	-- queue of predicted upcoming actions
 
@@ -91,6 +91,8 @@ function Predictor:PredictActions()
 					count = round((p["links"][i]["count"] / total) * 100);
 					if iconInSpellbook(spell) then
 						table.insert(a.PredictedEvents, {spell, count});
+					--else
+					--	print(spell);
 					end
 				end
 				-- finally, sort the table to show most likely first

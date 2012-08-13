@@ -57,7 +57,7 @@ function ColLogEvent(desc, ...)
 	entry = {desc, {...}, time()}	
 	table.insert(EventBuffer, entry)
 	if not a.PauseEventTracking then
-		table.insert(a.EventLog, entry)
+		table.insert(a.EventLog[UnitName("player")], entry)
 	end
 end
 

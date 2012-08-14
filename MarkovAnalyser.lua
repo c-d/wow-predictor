@@ -120,10 +120,9 @@ function markov:refresh(buffer, modelName)
 					a.Models[modelName][key] = chain;
 					changed = true;
 				end
-				-- finally, the predicted event
-				--m.Broadcast(Chain.ToString(chain));	-- TODO: remove once broadcasting is changed
 				Chain.AddEvent(chain, events[i]);
 			else
+				-- This was removed in case the model being generated was not the model being visualized. However, this might be okay to return for now..
 				--Predictor:Break();
 			end
 			Queue:Add(events[i]);	-- get next event

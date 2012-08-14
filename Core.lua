@@ -445,13 +445,13 @@ function PredictorAddon:LoadGlobalData()
 	
 	-- Models contains all models, indexed by player name
 	a.Models = loadFromConfig("Models");		
-	a.DebugMode = loadFromConfig("DebugMode");	
+	a.DebugMode = loadFromConfig("DebugMode", false);	
 	a.ModelInUse = loadFromConfig("ModelInUse", UnitName("player"));
 	a.Size = loadFromConfig("Size");
 	a.Subscriptions = loadFromConfig("Subscriptions");
 	a.EventLog = loadFromConfig("SEventLog", nil, true);
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
-	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 10);
+	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 30);
 	a.SubscriptionUpdateFrequency = loadFromConfig("SubscriptionUpdateFrequency", 60);
 	
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
@@ -460,7 +460,7 @@ function PredictorAddon:LoadGlobalData()
 	a.VisPosX = loadFromConfig("VisPosX", -200);
 	a.VisPosY = loadFromConfig("VisPosY", -275);
 	a.VisPosAnchor = loadFromConfig("VisPosAnchor", "RIGHT");
-	a.VisDragEnabled = loadFromConfig("VisDragEnabled", false);
+	a.VisDragEnabled = loadFromConfig("VisDragEnabled", true);
 	a.VisShowRankAccuracy = loadFromConfig("VisShowRankAccuracy", false);
 	a.VisShowPredAccuracy = loadFromConfig("VisShowPredAccuracy", false);
 	--a.SelectedVis = loadFromConfig("SelectedVis", "PrVisScroll");

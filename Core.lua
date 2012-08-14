@@ -218,7 +218,7 @@ function PredictorAddon:setupOptions()
 					subscribe = {
 						order = 8,
 						name = "Subscribe to new model",
-						desc = "Subscribe to a subscription model",
+						desc = "Subscribe to a subscription model. It may take a few seconds to establish a subscription.",
 						type = "input",
 						set = function(info, val) 
 							Messenger.SubscribeToBroadcaster(UnitName("player"), val); 
@@ -232,14 +232,19 @@ function PredictorAddon:setupOptions()
 						type = "execute",
 						confirm = true,
 						func = function(info, val) 
-							--Messenger.UnSubscribeToBroadcaster(UnitName("player"), a.ModelInUse); 
-							if a.ModelInUse ~= UnitName("player") then
-								a.Models[a.ModelInUse] = nil;
-								a.Size[a.ModelInUse] = nil;
-								a.Subscriptions[a.ModelInUse] = nil;
-								a.ModelInUse = UnitName("player");
-								PredictorAddon:SaveGlobalData();
+							local models = split(a.ModelInUse, ",");
+							for i=1, #models do
+								if models[i] ~= UnitName("player") then
+									a.EventLog[models[i]] = nil;
+									a.Models[models[i]] = nil;
+									a.Size[models[i]] = nil;
+									a.Subscriptions[models[i]] = nil;
+									a.ModelInUse = UnitName("player");
+								end
 							end
+							PredictorAddon:SaveGlobalData();
+							-- Now need to generate a model for the currently selected source
+							MarkovAnalyser:fullRefresh(a.ModelInUse);							
 						end
 					},
 					update = {
@@ -255,7 +260,7 @@ function PredictorAddon:setupOptions()
 								end
 								Messenger.RequestUpdate(lastUpdate, a.ModelInUse);
 							else
-								MarkovAnalyser:fullRefresh(); -- otherwise just refresh player model
+								MarkovAnalyser:fullRefresh(a.ModelInUse); -- otherwise just refresh player model
 							end
 						end
 					},
@@ -443,7 +448,7 @@ function PredictorAddon:LoadGlobalData()
 	a.Subscriptions = loadFromConfig("Subscriptions");
 	a.EventLog = loadFromConfig("SEventLog", nil, true);
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
-	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 5);
+	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 10);
 	a.SubscriptionUpdateFrequency = loadFromConfig("SubscriptionUpdateFrequency", 60);
 	
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
@@ -477,7 +482,8 @@ function PredictorAddon:LoadGlobalData()
 	end
 	-- Subscription info	
 	if not a.Subscriptions[UnitName("player")] then 
-		a.Subscriptions[UnitName("player")] = PredictorAddon:PlayerInfo(); 
+		local class, level, primarytalent, talent1, talent2, talent3 = PredictorAddon:PlayerInfo();
+		a.Subscriptions[UnitName("player")] = {class, level, primarytalent, talent1, talent2, talent3};
 	end;
 	
 	-- May not be necessary, but just in case
@@ -506,7 +512,7 @@ end
 
 function PredictorAddon:SaveGlobalData()
 	dprint("PredictorCore: Saving data");
-	--PredictorAddonConfig["Models"] = a.Models;
+	PredictorAddonConfig["Models"] = a.Models;
 	PredictorAddonConfig["DebugMode"] = a.DebugMode;
 	PredictorAddonConfig["ModelInUse"] = a.ModelInUse;
 	PredictorAddonConfig["Size"] = a.Size;
@@ -517,7 +523,7 @@ function PredictorAddon:SaveGlobalData()
 	
 	PredictorAddonConfig["SEventLog"] = AceSerializer:Serialize(a.EventLog);
 	-- Uncomment this line for more readable config files (copies contents of SEventLog, so wasted file size)
-	--PredictorAddonConfig["EventLog"] = a.EventLog;
+	PredictorAddonConfig["EventLog"] = a.EventLog;
 	
 	--PredictorAddonConfig["SelectedVis"] = a.SelectedVis;
 	

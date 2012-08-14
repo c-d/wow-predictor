@@ -29,7 +29,7 @@ frame:SetScript("OnUpdate", function(self, ...)
 				if #EventBuffer > a.Size[UnitName("player")] then
 					--dprint(EventBuffer[#EventBuffer][2][2]);
 					-- Now make a sub-buffer of pre-sequence + result
-					sub = {};
+					local sub = {};
 					for i=1,a.Size[UnitName("player")] + 1 do
 						sub[i] = EventBuffer[i];
 					end
@@ -43,6 +43,7 @@ frame:SetScript("OnUpdate", function(self, ...)
 end);
 
 function markov:fullRefresh(source)
+	print("full refresh");
 	-- Commented out: Just delete data for current size.
 	-- local count = 0;
 	-- for k,v in pairs(a.Models[a.ModelInUse]) do
@@ -66,10 +67,9 @@ function markov:fullRefresh(source)
 		end
 		--print("source: " .. sources[i] .. " -- " .. #f .. " found");
 	end
-	--print("processing " .. #filteredBuffer);
-	a.Models[sources] = {};
-	PredictorAddon:SaveGlobalData();
-	markov:refresh(filteredBuffer, table.concat(sources, ","));
+	local modelName = table.concat(sources, ",");
+	a.Models[modelName] = {};
+	markov:refresh(filteredBuffer, modelName);
 end
 
 function filterEvents(buffer)
@@ -92,7 +92,7 @@ end
 function markov:refresh(buffer, modelName)
 	local events = {}	-- refresh events
 	local times = {};
-	a.Models[modelName] = {}; -- currently recreating model from scratch every time... maybe not ideal for performance
+	--a.Models[modelName] = {}; -- currently recreating model from scratch every time... maybe not ideal for performance
 	if buffer then
 		for i=1,# buffer do
 			eType = buffer[i][1];

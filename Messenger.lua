@@ -118,6 +118,7 @@ function m.HandleUpdate(src, msg)
 	if success then
 		if #events > 0 then
 			for i=1, #events do
+				if not a.EventLog[src] then a.EventLog[src] = {}; end;
 				tinsert(a.EventLog[src], events[i]);
 			end
 			--dprint("Messenger: " .. #events .. " new events received from " .. src .. ".");
@@ -134,7 +135,9 @@ end
 function m.ParsePlayerInfo(src, msg)
 	local class, level, primarytalent, talent1, talent2, talent3 = split(msg, ",");
 	a.Subscriptions[src] = class, level, primarytalent, talent1, talent2, talent3;
-	--TODO not sure if this should be here or elsewhere
+	print("Messenger: Subscription to " .. src .. " established.");
+	--.. " - Level " .. level .. " " .. primarytalent .. " " .. class)-- .. 
+												--" (" .. talent1 .. "/" .. talent2 .. "/" .. talent3 .. ")")
 	a.Models[src] = {};
 	a.EventLog[src] = {};
 	m.RequestUpdate(0, src);
@@ -167,7 +170,7 @@ function m.CheckOnline()
 			if fname == name then
 				if fconnect then
 					if a.DebugMode and not Online[name] then print(name .. " is connected. Continuing/resuming update requests to this subscription source."); end;
-					m.RequestUpdate(a.EventLog[name][#a.EventLog[name]][3],name);
+					--m.RequestUpdate(a.EventLog[name][#a.EventLog[name]][3],name);
 					Online[name] = true;
 				else
 					if a.DebugMode and Online[name] then print(fname .. " is not connected. Pausing update requests to this subscription source."); end;

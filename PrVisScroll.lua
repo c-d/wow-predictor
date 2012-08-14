@@ -356,6 +356,7 @@ function PrVisScroll:SpellWasCast(spellName)
 			PredictorTrialsAddon:LogSpellAccuracy(rank, likelihood, spellName, PredictListFrame.spells);
 		end
 		--dprint(rank .. " - " .. likelihood);
+		
 	end
 end
 

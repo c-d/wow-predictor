@@ -4,12 +4,13 @@ local m = Messenger
 MarkovAnalyser = {}
 local markov = MarkovAnalyser
 
-events = {}
-dict = {}
-
+-- Useful for measuring performance
+-- local startTime = GetTime();
+-- local complete = GetTime() - startTime;
+-- print("Refresh time (millis): " .. complete);
+local events = {};
 -- Main loop.
 --  Checks the event buffer for new additions - if something has changed, refresh all of our sequences.
-
 local frame = CreateFrame("Frame");
 local lastTime = time();
 local lastEvent = nil;
@@ -43,7 +44,6 @@ frame:SetScript("OnUpdate", function(self, ...)
 end);
 
 function markov:fullRefresh(source)
-	print("full refresh");
 	-- Commented out: Just delete data for current size.
 	-- local count = 0;
 	-- for k,v in pairs(a.Models[a.ModelInUse]) do
@@ -55,28 +55,26 @@ function markov:fullRefresh(source)
 	-- end
 	-- dprint("Existing sequences cleared: " .. count);
 	local sources = split(source, ",");
-	if #sources == 0 then
-		local n = UnitName("player");
-		tinsert(sources, n);
-	end	
 	local filteredBuffer = {};
-	for i=1, #sources do
-		local f = filterEvents(a.EventLog[sources[i]]);
-		for j=1, #f do
-			tinsert(filteredBuffer, f[j]);
+	if #sources == 1 then
+		filteredBuffer = filterEvents(a.EventLog[source]);
+	else
+		for i=1, #sources do
+			local f = filterEvents(a.EventLog[sources[i]]);
+			for j=1, #f do
+				tinsert(filteredBuffer, f[j]);
+			end
+			--print("source: " .. sources[i] .. " -- " .. #f .. " found");
 		end
-		--print("source: " .. sources[i] .. " -- " .. #f .. " found");
-	end
-	local modelName = table.concat(sources, ",");
-	a.Models[modelName] = {};
-	markov:refresh(filteredBuffer, modelName);
+	end	
+	a.Models[source] = {};
+	markov:refresh(filteredBuffer, source);
 end
 
 function filterEvents(buffer)
 	local result = {}
 	if buffer then
 		for i=1,# buffer do
-			eType = buffer[i][1];
 			if buffer[i][1]:find("UNIT_SPELLCAST_SUCCEEDED") then	-- ignoring other event types for now
 				if buffer[i][2][1] == "player" then -- only process player actions - this can be changed later if wanted.
 					if buffer[i][2][2] ~= "Auto Shot" then -- Here add individual filters...
@@ -92,7 +90,6 @@ end
 function markov:refresh(buffer, modelName)
 	local events = {}	-- refresh events
 	local times = {};
-	--a.Models[modelName] = {}; -- currently recreating model from scratch every time... maybe not ideal for performance
 	if buffer then
 		for i=1,# buffer do
 			eType = buffer[i][1];
@@ -124,7 +121,6 @@ function markov:refresh(buffer, modelName)
 					changed = true;
 				end
 				-- finally, the predicted event
-				Chain.AddEvent(chain, events[a.Size[modelName] + 1]);
 				--m.Broadcast(Chain.ToString(chain));	-- TODO: remove once broadcasting is changed
 				Chain.AddEvent(chain, events[i]);
 			else
@@ -315,10 +311,10 @@ end
 Queue = {
 	Add = function(self, event)
 		if # self.q == self.capacity then
-			table.remove(self.q,1);
+			table.remove(self.q, 1);
 		end
 		table.insert(self.q,event);
-		--print("Added event to queue: " .. event);
+		--print("Added event to queue: " .. event.. ". Queue is now: " .. Queue:GetString());		
 	end,
 	
 	GetString = function(self)

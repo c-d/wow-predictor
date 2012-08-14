@@ -138,6 +138,7 @@ function PredictorAddon:setupOptions()
 						name = "Select models",
 						desc = "Select the models used for prediction. At least one model must be selected. Selecting multiple models will combine event data to create a single set of predictions.",
 						type = "multiselect",
+						--tristate = true,
 						set = function(info, name, val)
 							local subs = split(a.ModelInUse, ",");
 							-- for i=1, #subs do
@@ -162,10 +163,8 @@ function PredictorAddon:setupOptions()
 							end
 							table.sort(subs);	-- Now make it alphabetical (so the keys always match regardless of the order in which they were selected)
 							a.ModelInUse = table.concat(subs, ",");
-							print("Core: " .. a.ModelInUse);
 							PredictorAddon:SaveGlobalData();
 							PredictorAddon:LoadGlobalData();
-							print("Core: " .. a.ModelInUse);
 							MarkovAnalyser:fullRefresh(a.ModelInUse);
 						end,
 						get = function(info, val)
@@ -174,6 +173,10 @@ function PredictorAddon:setupOptions()
 							for i=1, #models do
 								if models[i] == val then return true; end;
 							end
+							-- for k,v in pairs(a.Subscriptions) do
+								-- print(k);
+								-- if k == val then return nil; end;
+							-- end
 							return false;
 						end,
 						values = function()
@@ -512,7 +515,7 @@ end
 
 function PredictorAddon:SaveGlobalData()
 	dprint("PredictorCore: Saving data");
-	PredictorAddonConfig["Models"] = a.Models;
+	--PredictorAddonConfig["Models"] = a.Models;
 	PredictorAddonConfig["DebugMode"] = a.DebugMode;
 	PredictorAddonConfig["ModelInUse"] = a.ModelInUse;
 	PredictorAddonConfig["Size"] = a.Size;
@@ -523,7 +526,7 @@ function PredictorAddon:SaveGlobalData()
 	
 	PredictorAddonConfig["SEventLog"] = AceSerializer:Serialize(a.EventLog);
 	-- Uncomment this line for more readable config files (copies contents of SEventLog, so wasted file size)
-	PredictorAddonConfig["EventLog"] = a.EventLog;
+	--PredictorAddonConfig["EventLog"] = a.EventLog;
 	
 	--PredictorAddonConfig["SelectedVis"] = a.SelectedVis;
 	
@@ -570,12 +573,22 @@ end
 
 function PredictorAddon:ResetData()
 	 MarkovAnalyser:reset(); 
-	 MarkovAnalyser:fullRefresh()
+	 MarkovAnalyser:fullRefresh(a.ModelInUse)
 	 PrVisScroll:InitAll();
 end
 
 function PredictorAddon:ResetVisualizations()
 	 PrVisScroll:InitAll();
+end
+
+
+function PredictorAddon:ResetVisualizationPosition()
+	a.VisPosX = nil;
+	a.VisPosY = nil;
+	a.VisPosAnchor = nil;
+	PredictorAddon:SaveGlobalData();
+	PredictorAddon:LoadGlobalData();
+	--PredictorAddon:ResetVisualizations();
 end
 
 function PredictorAddon:GetEventCount()
@@ -586,7 +599,8 @@ end
 
 function PredictorAddon:SetSequenceLength(val)
 	a.Size[a.ModelInUse] = val;
-	MarkovAnalyser:fullRefresh();
+	a.PredictedEvents = {}	-- flush the prediction buffer
+	MarkovAnalyser:fullRefresh(a.ModelInUse);
 end
 
 function PredictorAddon:HideVisualizations(val)

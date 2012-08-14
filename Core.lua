@@ -233,11 +233,13 @@ function PredictorAddon:setupOptions()
 						confirm = true,
 						func = function(info, val) 
 							--Messenger.UnSubscribeToBroadcaster(UnitName("player"), a.ModelInUse); 
-							a.Models[a.ModelInUse] = nil;
-							a.Size[a.ModelInUse] = nil;
-							a.Subscriptions[a.ModelInUse] = nil;
-							a.ModelInUse = UnitName("player");
-							PredictorAddon:SaveGlobalData();
+							if a.ModelInUse ~= UnitName("player") then
+								a.Models[a.ModelInUse] = nil;
+								a.Size[a.ModelInUse] = nil;
+								a.Subscriptions[a.ModelInUse] = nil;
+								a.ModelInUse = UnitName("player");
+								PredictorAddon:SaveGlobalData();
+							end
 						end
 					},
 					update = {
@@ -281,10 +283,17 @@ function PredictorAddon:setupOptions()
 					wipe = {
 						order = -1,
 						name = "Delete data",
-						desc = "Delete all data. Warning: This cannot be reverted.",
+						desc = "Delete all data (not just for the current model). Warning: This cannot be reverted. This will also reload the UI.",
 						type = "execute",
 						confirm = true;
-						func = function() MarkovAnalyser:reset(); MarkovAnalyser:fullRefresh(a.ModelInUse) end,
+						func = function() 
+							--MarkovAnalyser:reset(); 
+							--MarkovAnalyser:fullRefresh(a.ModelInUse)
+							for k, _ in pairs(PredictorAddonConfig) do
+								PredictorAddonConfig[k] = nil;
+							end
+							ReloadUI();
+						end,
 						width = "full"
 					}
 				}
@@ -343,6 +352,7 @@ function PredictorAddon:setupOptions()
 						width = "full"
 					},
 					enabledragging = {
+						order = 1,
 						name = "Enable dragging",
 						desc = "Unlock the visualization frame to allow repositioning",
 						type = "toggle",
@@ -355,6 +365,7 @@ function PredictorAddon:setupOptions()
 						width = "full"
 					},
 					resetUI = {
+						order = 2,
 						name = "Reset defaults",
 						desc = "Reset the UI to default positioning/scaling",
 						type = "execute",
@@ -380,6 +391,7 @@ function PredictorAddon:setupOptions()
 						set = function(info, val) 
 							a.VisShowRankAccuracy = val;
 							PrVisScroll:UpdateAccuracyTextVisibility();
+							PredictorAddon:SaveGlobalData();
 						end,
 						get = function()
 							return a.VisShowRankAccuracy;
@@ -392,6 +404,7 @@ function PredictorAddon:setupOptions()
 						set = function(info, val) 
 							a.VisShowPredAccuracy = val;
 							PrVisScroll:UpdateAccuracyTextVisibility();
+							PredictorAddon:SaveGlobalData();
 						end,
 						get = function()
 							return a.VisShowPredAccuracy;
@@ -476,8 +489,9 @@ end
 -- Default init value is {}, unless explicitly provided.
 function loadFromConfig(id, default, serialized)
 	result = PredictorAddonConfig[id]
-	if not result then
-		if default then
+	-- Can't use "not result", because the value may actually be false, check for nil instead.
+	if result == nil then
+		if default ~= nil then
 			result = default;
 		else
 			result = {};

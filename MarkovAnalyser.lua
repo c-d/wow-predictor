@@ -178,6 +178,7 @@ function markov:reset()
 	a.Models[a.ModelInUse] = {}
 	a.EventLog = {};
 	a.EventLog[UnitName("player")] = {};
+	print(#a.EventLog);
 	PredictorAddon:SaveGlobalData();
 	print("MarkovAnalyser: Data erased");
 end

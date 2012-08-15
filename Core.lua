@@ -6,7 +6,7 @@ PredictorAddon = LibStub("AceAddon-3.0"):NewAddon(AddonName, "AceComm-3.0", "Ace
 
 function PredictorAddon:OnInitialize()
 	PredictorAddon:LoadGlobalData();
-	--MarkovAnalyser:refresh();
+	MarkovAnalyser:fullRefresh(a.ModelInUse);
 	--if not a.EvaluationMode then 
 		PredictorAddon:setupOptions(); 
 	--end

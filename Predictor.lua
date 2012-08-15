@@ -7,7 +7,7 @@ a.PredictedEvents = {}	-- queue of predicted upcoming actions
 Predictor = {};
 
 function Predictor:AddEventForPrediction(event)	-- TODO: Refactor, global for now
-	if # SFHistory >= a.Size[a.ModelInUse] then
+	while # SFHistory >= a.Size[a.ModelInUse] do
 		table.remove(SFHistory, 1)	-- queue with a max length
 	end
 	table.insert(SFHistory, event)
@@ -77,6 +77,7 @@ function Predictor:PredictActions()
 			end
 			matchString = ""
 		end
+		--print("Match string: " .. matchString);
 		if matchString ~= "" then
 			p = a.Models[a.ModelInUse][matchString];
 			if p then
@@ -85,6 +86,7 @@ function Predictor:PredictActions()
 				total = p["total"]
 				for i=1,#p["links"] do	
 					spell = p["links"][i]["event"];
+					--print("Predicted: " .. spell);
 					-- cut off the first part of the id ("player" or "target" usually)
 					splitter = string.find(spell, "&");
 					spell = string.sub(spell, splitter+1);

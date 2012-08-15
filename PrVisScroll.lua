@@ -67,6 +67,7 @@ function PrVisScroll:InitPredictListFrame()
 	
 	-- Predictor frame that lists all predictions
 	PredictListFrame = CreateFrame("Frame")
+	PredictListFrame:SetFrameStrata("BACKGROUND");
 	PredictListFrame:ClearAllPoints()
 	--PredictListFrame:SetBackdrop(StaticPopup1:GetBackdrop())
 	PredictListFrame:SetHeight(250)
@@ -114,7 +115,7 @@ function PrVisScroll:InitPredictListFrame()
 		end
 	end);
 	PredictListFrame:SetScript("OnMouseDOWN", function(self, elapsed)
-		if a.VisDragEnabled then
+		if a.VisDragEnabled and IsShiftKeyDown() then
 			PredictListFrame:StartMoving();
 		end
 	end);
@@ -176,6 +177,7 @@ end
 
 function PrVisScroll:InitLineFrame()
 	LineFrame = CreateFrame("Frame", nil, PredictListFrame);
+	LineFrame:SetFrameStrata("BACKGROUND");
 	LineFrame:ClearAllPoints()
 	LineFrame:SetFrameStrata("LOW");
 	LineFrame:SetHeight(250)

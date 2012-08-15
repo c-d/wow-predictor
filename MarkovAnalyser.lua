@@ -44,16 +44,6 @@ frame:SetScript("OnUpdate", function(self, ...)
 end);
 
 function markov:fullRefresh(source)
-	-- Commented out: Just delete data for current size.
-	-- local count = 0;
-	-- for k,v in pairs(a.Models[a.ModelInUse]) do
-		-- eventCodes = split(v["prefix"], "#");
-		-- if #eventCodes == a.Size[a.ModelInUse] then
-			-- tremove(a.Models[a.ModelInUse]);
-			-- count = count + 1;
-		-- end
-	-- end
-	-- dprint("Existing sequences cleared: " .. count);
 	local sources = split(source, ",");
 	local filteredBuffer = {};
 	if #sources == 1 then
@@ -64,7 +54,7 @@ function markov:fullRefresh(source)
 			for j=1, #f do
 				tinsert(filteredBuffer, f[j]);
 			end
-			--print("source: " .. sources[i] .. " -- " .. #f .. " found");
+			print("source: " .. sources[i] .. " -- " .. #f .. " found");
 		end
 	end	
 	a.Models[source] = {};

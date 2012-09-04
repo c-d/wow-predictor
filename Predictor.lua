@@ -1,16 +1,16 @@
 local AddonName, a = ...
 
 --local frame, events = CreateFrame("Frame"), {};
-local SFHistory = {}
+local UsageHistory = {}
 a.PredictedEvents = {}	-- queue of predicted upcoming actions
 
 Predictor = {};
 
 function Predictor:AddEventForPrediction(event)	-- TODO: Refactor, global for now
-	while # SFHistory >= a.Size[a.ModelInUse] do
-		table.remove(SFHistory, 1)	-- queue with a max length
+	while # UsageHistory >= a.Size[a.ModelInUse] do
+		table.remove(UsageHistory, 1)	-- queue with a max length
 	end
-	table.insert(SFHistory, event)
+	table.insert(UsageHistory, event)
 	spellName = event[2][2];
 	--need to think about this more
 	PrVisScroll:SpellWasCast(spellName);
@@ -47,8 +47,8 @@ end
 -- Prediction logic - maintains a.PredictedEvents, so that other classes can always access and find the next expected events
 function Predictor:PredictActions()
 	a.PredictedEvents = {}
-	if # SFHistory == a.Size[a.ModelInUse] then	-- don't try and predict anything unless we have a full queue
-		for i,v in ipairs(SFHistory) do 
+	if #UsageHistory == a.Size[a.ModelInUse] then	-- don't try and predict anything unless we have a full queue
+		for i,v in ipairs(UsageHistory) do 
 			desc = v[1]
 			args = v[2]
 		end
@@ -63,7 +63,7 @@ function Predictor:PredictActions()
 			if # eventCodes == a.Size[a.ModelInUse] then	-- restrict comparisons to sequences of the same length only
 				for i=1, a.Size[a.ModelInUse] do
 					lArgs = split(eventCodes[i], "&");
-					hEvent = SFHistory[i]
+					hEvent = UsageHistory[i]
 					hArgs = {hEvent[2][1], hEvent[2][2]}
 					if hArgs[1] ~= lArgs[1] or hArgs[2] ~= lArgs[2] then
 						match = false
@@ -79,30 +79,108 @@ function Predictor:PredictActions()
 		end
 		--print("Match string: " .. matchString);
 		if matchString ~= "" then
-			p = a.Models[a.ModelInUse][matchString];
+			local p = a.Models[a.ModelInUse][matchString];
 			if p then
 				-- get each link and add it to a nice table for processing by clients
 				-- table should look like {{eventname,probability},{eventname,probability},...}
-				total = p["total"]
+				local total = p["total"]
 				for i=1,#p["links"] do	
-					spell = p["links"][i]["event"];
+					local spell = p["links"][i]["event"];
+					local weightSum = (a.WeightingEvents + a.WeightingBuffs + a.WeightingState);
 					--print("Predicted: " .. spell);
 					-- cut off the first part of the id ("player" or "target" usually)
 					splitter = string.find(spell, "&");
 					spell = string.sub(spell, splitter+1);
-					count = round((p["links"][i]["count"] / total) * 100);
 					if iconInSpellbook(spell) then
-						table.insert(a.PredictedEvents, {spell, count});
+						local eventWeight = (p["links"][i]["count"] / total) * a.WeightingEvents;
+						--print("Event weight: " .. eventWeight);
+						local buffWeight = Predictor:GetBuffWeighting(spell);
+						--print("Buff weight: " .. buffWeight);
+						--print("Weight sum: " .. weightSum);
+						local stateWeight = Predictor:GetStateWeighting(spell);
+						local predictedWeight = round(((eventWeight + buffWeight + stateWeight) / weightSum) * 100);
+						print("Predicted weight: " .. predictedWeight);
+						if predictedWeight >= a.MinLikelihoodThreshold then
+							table.insert(a.PredictedEvents, {spell, predictedWeight});
+						end
 					--else
 					--	print(spell);
 					end
 				end
+				--Predictor:ApplyBuffWeightings();
 				-- finally, sort the table to show most likely first
 				table.sort(a.PredictedEvents, function(a,b) return a[2] > b[2] end)
 			end
 		end
 		PrVisScroll:Update();
 	end
+end
+
+function Predictor:GetBuffWeighting(spell)
+	local currentBuffs = {};
+	local i = 1;
+	local buff = UnitBuff("player", i);
+	while buff do
+		tinsert(currentBuffs, buff);		
+		i = i + 1;
+		buff = UnitBuff("player", i);
+	end
+	local sum = 0;
+	local totalPredicted = 0;
+	local historyBuffs = a.BuffLog[spell];
+	if historyBuffs then
+		--print(" -- ");
+		for k,v in pairs(historyBuffs) do
+			totalPredicted = totalPredicted + v;
+			for j=1, #currentBuffs do
+				if currentBuffs[j] == k then
+					sum = sum + v;
+					break;
+				end
+			end
+		end
+	end
+	return(sum / totalPredicted) * a.WeightingBuffs;
+end
+
+-- function Predictor:ApplyBuffWeightings()
+	-- if a.WeightingBuffs > 0 then
+		-- local currentBuffs = {};
+		-- local i = 1;
+		-- local buff = UnitBuff("player", i);
+		-- while buff do
+			-- tinsert(currentBuffs, buff);		
+			-- i = i + 1;
+			-- buff = UnitBuff("player", i);
+		-- end
+
+		-- for i=1, #a.PredictedEvents do
+			-- local sum = 0;
+			-- local totalPredicted = 0;
+			-- local prediction = a.PredictedEvents[i];
+			-- local historyBuffs = a.BuffLog[prediction[1]];
+			-- if historyBuffs then
+				-- print(" -- ");
+				-- for k,v in pairs(historyBuffs) do
+					-- totalPredicted = totalPredicted + v;
+					-- for j=1, #currentBuffs do
+						-- if currentBuffs[j] == k then
+							-- sum = sum + v;
+							-- break;
+						-- end
+					-- end
+				-- end
+			-- end
+			-- local proportion = (sum / totalPredicted) * 100;
+			-- print(prediction[1] .. ": " .. sum .. "/" .. totalPredicted .. " (" .. proportion .. "%)");
+			--TODO: Applying these weights might not be always be ideal, uncomment this line if unwanted
+			-- a.PredictedEvents[i][2] = round((a.PredictedEvents[i][2] + proportion) / 2);
+		-- end
+	-- end
+-- end
+
+function Predictor:GetStateWeighting(spell)
+	return 0;
 end
 
 function iconInSpellbook(spell)

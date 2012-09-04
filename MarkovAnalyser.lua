@@ -24,6 +24,7 @@ frame:SetScript("OnUpdate", function(self, ...)
 					-- Now that this is filtered, let predictor know that something relevant occurred.
 					-- Do this whenever eventbuffer isn't empty - don't want to wait for it to be ready
 					if lastEvent ~= EventBuffer[#EventBuffer] then 
+						PredictorInfoWindow:Update();
 						Predictor:AddEventForPrediction(EventBuffer[#EventBuffer]);	
 					end;
 				end

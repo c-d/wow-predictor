@@ -31,7 +31,7 @@ function PredictorAddon:setupOptions()
 	options = {
 		type = "group",
 		args = {
-			dataOptions = {
+			data = {
 				type = "group",
 				name = "Data",
 				args = {
@@ -55,7 +55,7 @@ function PredictorAddon:setupOptions()
 							return entries .. " unique sequences recognized from " .. eventCount .. " total events.";
 						end
 					},
-					size = {
+					setsize = {
 						order = 1,
 						name = "Sequence length",
 						desc = "Set the pre-sequence length for markov chains. Longer sequences result in less predictions with higher accuracy (generally).",
@@ -99,40 +99,23 @@ function PredictorAddon:setupOptions()
 						end,
 						width = "full"
 					},
-					-- selectmodel = {
-						-- order = 4,
-						-- name = "Select model",
-						-- desc = "Select the model used for prediction.",
-						-- type = "select",
-						-- set = function(info, val)
-							-- a.ModelInUse = val;
-							-- PredictorAddon:SaveGlobalData();
-						-- end,
-						-- get = function()
-							-- return a.ModelInUse;
-						-- end,
-						-- values = function()
-							-- result = {};
-							-- for k,v in pairs(a.Subscriptions) do
-								-- name = k
-								-- desc = k
-								-- if k == UnitName("player") then
-									-- desc = UnitName("player") .. " (Player)"
-								-- end
-								-- local info = a.Subscriptions[name]
-								-- if info then
-									-- if info[3] then	-- This is to check whether or not there are actually any talents specified.
-										-- desc = desc .. " - Level " .. info[2] .. " " .. info[3] .. " " .. info[1] .. 
-												-- " (" .. info[4] .. "/" .. info[5] .. "/" .. info[6] .. ")"
-									-- end
-								-- end
-								-- result[name] = desc;
-							-- end
-							-- return result;
-						-- end,
-						-- style = "dropdown",
-						-- width = "full"
-					-- },
+					setminlikelihoodthreshold = {
+						order = 3,
+						name = "Minimum likelihood threshold",
+						desc = "Set the minimum likelihood for predicted events. Any events predicted to occur with a likelihood lower than this value will not be shown.",
+						type = "range",
+						min = 0,
+						max = 100,
+						step = 1,
+						get = function()
+							return a.MinLikelihoodThreshold;
+						end,
+						set = function(info, val)
+							a.MinLikelihoodThreshold = val;
+							PredictorAddon:SaveGlobalData();
+						end,
+						width = "full"
+					},
 					selectmodels = {
 						order = 4,
 						name = "Select models",
@@ -190,8 +173,7 @@ function PredictorAddon:setupOptions()
 								local info = a.Subscriptions[name]
 								if info then
 									if info[3] then	-- This is to check whether or not there are actually any talents specified.
-										desc = desc .. " - Level " .. info[2] .. " " .. info[3] .. " " .. info[1] .. 
-												" (" .. info[4] .. "/" .. info[5] .. "/" .. info[6] .. ")"
+										desc = desc .. " - Level " .. info[2] .. " " .. info[3] .. " " .. info[1]
 									end
 								end
 								--print(name);
@@ -286,7 +268,7 @@ function PredictorAddon:setupOptions()
 						get = function()
 							return a.DebugMode;
 						end,
-						width = "full"
+						--width = "full"
 					},
 					wipe = {
 						order = -1,
@@ -303,10 +285,70 @@ function PredictorAddon:setupOptions()
 							ReloadUI();
 						end,
 						width = "full"
+					},
+					weightings = {
+						type = "group",
+						name = "Weightings",
+						args = {
+							seteventweighting = {
+								order = 1,
+								name = "Event history",
+								desc = "Set the weighting for prediction based upon event history vs observed events. This is generally the most consistent type of prediction, and should form the backbone of predictions. NOTE: The minimum value for this is greater than zero as some event history is necessary in order to apply other weighting values.",
+								type = "range",
+								min = 10,
+								max = 100,
+								step = 1,
+								set = function(info, val)
+									--a.WeightingBuffs, a.WeightingState = normalizeWeights(a.WeightingBuffs, a.WeightingState, val - a.WeightingEvents)
+									a.WeightingEvents = val;
+									PredictorAddon:SaveGlobalData();
+								end,
+								get = function()
+									return a.WeightingEvents;
+								end,
+								width = "full"
+							},
+							setbuffweighting = {
+								order = 2,
+								name = "Active buffs",
+								desc = "Set the weighting for prediction based upon currently active vs historically observed buffs for predicted events.",
+								type = "range",
+								min = 0,
+								max = 100,
+								step = 1,
+								set = function(info, val)
+									--a.WeightingEvents, a.WeightingState = normalizeWeights(a.WeightingEvents, a.WeightingState, val - a.WeightingBuffs)
+									a.WeightingBuffs = val;
+									PredictorAddon:SaveGlobalData();
+								end,
+								get = function()
+									return a.WeightingBuffs;
+								end,
+								width = "full"
+							},
+							setstateweighting = {
+								order = 3,
+								name = "State information",
+								desc = "Set the weighting for other state information (health/mana levels, party type, enemy/friendly target etc. NOTE: This is not fully implemented and may produce unexpected weightings.",
+								type = "range",
+								min = 0,
+								max = 100,
+								step = 1,
+								set = function(info, val)
+									--a.WeightingEvents, a.WeightingBuffs = normalizeWeights(a.WeightingEvents, a.WeightingBuffs, val - a.WeightingState)
+									a.WeightingState = val;
+									PredictorAddon:SaveGlobalData();
+								end,
+								get = function()
+									return a.WeightingState;
+								end,
+								width = "full"
+							}
+						}
 					}
 				}
 			},
-			visOptions = {
+			vis = {
 				type = "group",
 				name = "Visualization",
 				args = {
@@ -372,7 +414,7 @@ function PredictorAddon:setupOptions()
 						end,
 						width = "full"
 					},
-					resetUI = {
+					resetui = {
 						order = 2,
 						name = "Reset defaults",
 						desc = "Reset the UI to default positioning/scaling",
@@ -417,26 +459,28 @@ function PredictorAddon:setupOptions()
 						get = function()
 							return a.VisShowPredAccuracy;
 						end
-					}
+					},
+					showinfo = {
+						order = 2,
+						name = "Show info panel",
+						desc = "Show a graphical representation of predictive sequences",
+						type = "execute",
+						func = function() 
+								PredictorInfoWindow:Show();
+							end
+					},
 				}
 			}
 		}
 	}
 	
 	LibStub("AceConfig-3.0"):RegisterOptionsTable(AddonName, options);
-	--PredictorAddon:RegisterChatCommand("mychat", "ChatCommand")
+	--PredictorAddon:RegisterChatCommand("prd", "ChatCommand")
 	OptionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(AddonName)
-	--LibStub("AceConfig-3.0"):RegisterOptionsTable("PredictorOptions", self.options, {"/predictor", "/prd"});
+	--LibStub("AceConfig-3.0"):RegisterOptionsTable(AddonName, options, {"/predictor", "/prd"});
 	--print("2");
-
-
-	-- elseif msg:find("subscribe") then
-		-- subscriber = msg:gsub("subscribe ", "");
-		-- m.SubscribeToBroadcaster(UnitName("player"), subscriber);
-	-- elseif msg:find("unsubscribe") then
-		-- subscriber = msg:gsub("unsubscribe ", "");
-		-- m.UnSubscribeToBroadcaster(UnitName("player"), subscriber);
-
+	LibStub("AceConfigCmd-3.0"):CreateChatCommand("prd", AddonName);
+	--PredictorAddon:RegisterChatCommand("mychat", "ChatCommand")
 end
 
 function PredictorAddon:LoadGlobalData()
@@ -450,9 +494,16 @@ function PredictorAddon:LoadGlobalData()
 	a.Size = loadFromConfig("Size");
 	a.Subscriptions = loadFromConfig("Subscriptions");
 	a.EventLog = loadFromConfig("SEventLog", nil, true);
+	a.BuffLog = loadFromConfig("BuffLog", nil, false);
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
 	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 30);
+	a.MinLikelihoodThreshold = loadFromConfig("MinLikelihoodThreshold", 0);
 	a.SubscriptionUpdateFrequency = loadFromConfig("SubscriptionUpdateFrequency", 60);
+	--a.ApplyBuffWeighting = loadFromConfig("ApplyBuffWeighting", true);
+	a.WeightingEvents = loadFromConfig("WeightingEvents", 100);
+	a.WeightingBuffs = loadFromConfig("WeightingBuffs", 0);
+	a.WeightingState = loadFromConfig("WeightingState", 0);
+	
 	
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
 	a.VisAlphaDecay = loadFromConfig("VisAlphaDecay", 0.002);
@@ -485,8 +536,8 @@ function PredictorAddon:LoadGlobalData()
 	end
 	-- Subscription info	
 	if not a.Subscriptions[UnitName("player")] then 
-		local class, level, primarytalent, talent1, talent2, talent3 = PredictorAddon:PlayerInfo();
-		a.Subscriptions[UnitName("player")] = {class, level, primarytalent, talent1, talent2, talent3};
+		local class, level, spec = PredictorAddon:PlayerInfo();
+		a.Subscriptions[UnitName("player")] = {class, level, spec};
 	end;
 	
 	-- May not be necessary, but just in case
@@ -515,7 +566,7 @@ end
 
 function PredictorAddon:SaveGlobalData()
 	dprint("PredictorCore: Saving data");
-	--PredictorAddonConfig["Models"] = a.Models;
+	PredictorAddonConfig["Models"] = a.Models;
 	PredictorAddonConfig["DebugMode"] = a.DebugMode;
 	PredictorAddonConfig["ModelInUse"] = a.ModelInUse;
 	PredictorAddonConfig["Size"] = a.Size;
@@ -523,8 +574,16 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["ProcessEvents"] = a.ProcessEvents;
 	PredictorAddonConfig["MaxTimeBetweenEvents"] = a.MaxTimeBetweenEvents;
 	PredictorAddonConfig["SubscriptionUpdateFrequency"] = a.SubscriptionUpdateFrequency;
+	PredictorAddonConfig["MinLikelihoodThreshold"] = a.MinLikelihoodThreshold;
+	
+	PredictorAddonConfig["WeightingEvents"] = a.WeightingEvents;
+	PredictorAddonConfig["WeightingBuffs"] = a.WeightingBuffs;
+	PredictorAddonConfig["WeightingState"] = a.WeightingState;
+	
+	
 	
 	PredictorAddonConfig["SEventLog"] = AceSerializer:Serialize(a.EventLog);
+	PredictorAddonConfig["BuffLog"] = a.BuffLog;
 	-- Uncomment this line for more readable config files (copies contents of SEventLog, so wasted file size)
 	--PredictorAddonConfig["EventLog"] = a.EventLog;
 	
@@ -546,25 +605,35 @@ end
 -- Returns class, level, and spec information
 -- {class, level, primarytalent, {talent1, talent2, talent3}}
 function PredictorAddon:PlayerInfo()
-	class = UnitClass("player");
-	level = UnitLevel("player");
-	-- Get talent spec and main tree description (e.g. Holy - 41,20,0)
-	local _,t1name,_,_,t1points = GetTalentTabInfo(1)
-	local _,t2name,_,_,t2points = GetTalentTabInfo(2)
-	local _,t3name,_,_,t3points = GetTalentTabInfo(3)	
-	
-	bigger = math.max(t1points, t2points, t3points);
-	if t1points == bigger then mainspec = t1name;
-	elseif t2points == bigger then mainspec = t2name;
-	else mainspec = t3name;
-	end
-	
-	--result = {class, level, mainspec, talents};
-	return class, level, mainspec, t1points, t2points, t3points;
+	local class = UnitClass("player");
+	local level = UnitLevel("player");
+	local currentSpec = GetSpecialization();
+	local spec = currentSpec and select(2, GetSpecializationInfo(currentSpec)) or "No specialization found."
+	return class, level, spec;
 end
 
 function dprint(str)
 	if a.DebugMode then print(str); end;
+end
+
+function normalizeWeights(a, b, diff)
+	a = a - diff / 2;
+	b = b - diff / 2;
+	if a > 100 then
+		b = b + (a - 100);
+		a = 100;
+	elseif a < 0 then
+		b = b - a;
+		a = 0;
+	end
+	if b > 100 then
+		a = a + (b - 100);
+		b = 100;
+	elseif b < 0 then
+		a = a - b;
+		b = 0;
+	end
+	return a, b;
 end
 
 -- *******************************************************************

@@ -1,4 +1,4 @@
-﻿## Interface: 40300
+﻿## Interface: 50001
 ## Version: 1.0.0
 ## Author: Chris Deaker
 ## Title: Predictor

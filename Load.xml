@@ -15,4 +15,5 @@
 	<Script file="MarkovAnalyser.lua"/>
 	<Script file="Predictor.lua"/>
 	<Script file="PrVisScroll.lua"/>
+	<Script file="InfoWindow.lua"/>
 </Ui>

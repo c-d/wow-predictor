@@ -133,11 +133,9 @@ end
 
 
 function m.ParsePlayerInfo(src, msg)
-	local class, level, primarytalent, talent1, talent2, talent3 = split(msg, ",");
-	a.Subscriptions[src] = class, level, primarytalent, talent1, talent2, talent3;
+	local class, level, spec = split(msg, ",");
+	a.Subscriptions[src] = class, level, spec;
 	print("Messenger: Subscription to " .. src .. " established.");
-	--.. " - Level " .. level .. " " .. primarytalent .. " " .. class)-- .. 
-												--" (" .. talent1 .. "/" .. talent2 .. "/" .. talent3 .. ")")
 	a.Models[src] = {};
 	a.EventLog[src] = {};
 	m.RequestUpdate(0, src);

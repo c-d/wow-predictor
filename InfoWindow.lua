@@ -3,14 +3,14 @@ local AddonName, a = ...
 PredictorInfoWindow = {};
 
 local AceGUI = LibStub("AceGUI-3.0")
-local defaultStatus = AddonName .. " Information Panel";
+local defaultStatus = AddonName .. " -- Known Sequences";
 local listFrame;
 local scrollcontainer
 local iconGroupWidth = 500;
 local currentKey = "";
 
 local frame = AceGUI:Create("Frame");
-frame:SetTitle(AddonName .. " Info");
+frame:SetTitle(AddonName .. " -- Known Sequences");
 frame:SetStatusText(defaultStatus);
 frame:SetLayout("Flow");
 frame:EnableResize(false);
@@ -103,6 +103,13 @@ function PredictorInfoWindow:ShowInfoForKey(k)
 		local p = a.Models[a.ModelInUse][k];
 		if p then
 			infoContainer:ReleaseChildren();
+			
+			local sequenceLabel = AceGUI:Create("InteractiveLabel");
+			sequenceLabel:SetFont("Fonts\\ARIALN.ttf", 15);
+			sequenceLabel:SetWidth(900);
+			sequenceLabel:SetText(k:gsub("player&", ""):gsub("#", " -> "));
+			infoContainer:AddChild(sequenceLabel);
+			
 			total = p["total"]
 			for i=1,#p["links"] do	
 				spell = p["links"][i]["event"];

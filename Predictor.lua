@@ -99,7 +99,7 @@ function Predictor:PredictActions()
 						--print("Weight sum: " .. weightSum);
 						local stateWeight = Predictor:GetStateWeighting(spell);
 						local predictedWeight = round(((eventWeight + buffWeight + stateWeight) / weightSum) * 100);
-						print("Predicted weight: " .. predictedWeight);
+						--print("Predicted weight: " .. predictedWeight);
 						if predictedWeight >= a.MinLikelihoodThreshold then
 							table.insert(a.PredictedEvents, {spell, predictedWeight});
 						end
@@ -117,67 +117,35 @@ function Predictor:PredictActions()
 end
 
 function Predictor:GetBuffWeighting(spell)
-	local currentBuffs = {};
-	local i = 1;
-	local buff = UnitBuff("player", i);
-	while buff do
-		tinsert(currentBuffs, buff);		
-		i = i + 1;
-		buff = UnitBuff("player", i);
-	end
-	local sum = 0;
-	local totalPredicted = 0;
-	local historyBuffs = a.BuffLog[spell];
-	if historyBuffs then
-		--print(" -- ");
-		for k,v in pairs(historyBuffs) do
-			totalPredicted = totalPredicted + v;
-			for j=1, #currentBuffs do
-				if currentBuffs[j] == k then
-					sum = sum + v;
-					break;
+	if a.WeightingBuffs == 0 then
+		return 0;	-- Just to cut down on any additional processing if it's not needed
+	else 
+		local currentBuffs = {};
+		local i = 1;
+		local buff = UnitBuff("player", i);
+		while buff do
+			tinsert(currentBuffs, buff);		
+			i = i + 1;
+			buff = UnitBuff("player", i);
+		end
+		local sum = 0;
+		local totalPredicted = 0;
+		local historyBuffs = a.BuffLog[spell];
+		if historyBuffs then
+			--print(" -- ");
+			for k,v in pairs(historyBuffs) do
+				totalPredicted = totalPredicted + v;
+				for j=1, #currentBuffs do
+					if currentBuffs[j] == k then
+						sum = sum + v;
+						break;
+					end
 				end
 			end
 		end
+		return(sum / totalPredicted) * a.WeightingBuffs;
 	end
-	return(sum / totalPredicted) * a.WeightingBuffs;
 end
-
--- function Predictor:ApplyBuffWeightings()
-	-- if a.WeightingBuffs > 0 then
-		-- local currentBuffs = {};
-		-- local i = 1;
-		-- local buff = UnitBuff("player", i);
-		-- while buff do
-			-- tinsert(currentBuffs, buff);		
-			-- i = i + 1;
-			-- buff = UnitBuff("player", i);
-		-- end
-
-		-- for i=1, #a.PredictedEvents do
-			-- local sum = 0;
-			-- local totalPredicted = 0;
-			-- local prediction = a.PredictedEvents[i];
-			-- local historyBuffs = a.BuffLog[prediction[1]];
-			-- if historyBuffs then
-				-- print(" -- ");
-				-- for k,v in pairs(historyBuffs) do
-					-- totalPredicted = totalPredicted + v;
-					-- for j=1, #currentBuffs do
-						-- if currentBuffs[j] == k then
-							-- sum = sum + v;
-							-- break;
-						-- end
-					-- end
-				-- end
-			-- end
-			-- local proportion = (sum / totalPredicted) * 100;
-			-- print(prediction[1] .. ": " .. sum .. "/" .. totalPredicted .. " (" .. proportion .. "%)");
-			--TODO: Applying these weights might not be always be ideal, uncomment this line if unwanted
-			-- a.PredictedEvents[i][2] = round((a.PredictedEvents[i][2] + proportion) / 2);
-		-- end
-	-- end
--- end
 
 function Predictor:GetStateWeighting(spell)
 	return 0;

@@ -95,9 +95,11 @@ function Predictor:PredictActions()
 						local eventWeight = (p["links"][i]["count"] / total) * a.WeightingEvents;
 						--print("Event weight: " .. eventWeight);
 						local buffWeight = Predictor:GetBuffWeighting(spell);
-						--print("Buff weight: " .. buffWeight);
-						--print("Weight sum: " .. weightSum);
 						local stateWeight = Predictor:GetStateWeighting(spell);
+						-- print("Buff weight: " .. buffWeight);
+						-- print("State weight: " .. stateWeight);
+						-- print("Event weight: " .. eventWeight);
+						-- print("Weight sum: " .. weightSum);
 						local predictedWeight = round(((eventWeight + buffWeight + stateWeight) / weightSum) * 100);
 						--print("Predicted weight: " .. predictedWeight);
 						if predictedWeight >= a.MinLikelihoodThreshold then
@@ -143,12 +145,12 @@ function Predictor:GetBuffWeighting(spell)
 				end
 			end
 		end
-		return(sum / totalPredicted) * a.WeightingBuffs;
+		return (sum / totalPredicted) * a.WeightingBuffs;
 	end
 end
 
 function Predictor:GetStateWeighting(spell)
-	return 0;
+	return PrStateManager:GetLikelihoodForSpell(spell) * a.WeightingState;
 end
 
 function iconInSpellbook(spell)

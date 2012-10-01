@@ -495,6 +495,7 @@ function PredictorAddon:LoadGlobalData()
 	a.Subscriptions = loadFromConfig("Subscriptions");
 	a.EventLog = loadFromConfig("SEventLog", nil, true);
 	a.BuffLog = loadFromConfig("BuffLog", nil, false);
+	a.StateLog = loadFromConfig("StateLog", nil, false);
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
 	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 30);
 	a.MinLikelihoodThreshold = loadFromConfig("MinLikelihoodThreshold", 0);
@@ -584,6 +585,7 @@ function PredictorAddon:SaveGlobalData()
 	
 	PredictorAddonConfig["SEventLog"] = AceSerializer:Serialize(a.EventLog);
 	PredictorAddonConfig["BuffLog"] = a.BuffLog;
+	PredictorAddonConfig["StateLog"] = a.StateLog;
 	-- Uncomment this line for more readable config files (copies contents of SEventLog, so wasted file size)
 	--PredictorAddonConfig["EventLog"] = a.EventLog;
 	

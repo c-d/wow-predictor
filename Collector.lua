@@ -57,6 +57,7 @@ function ColLogEvent(desc, ...)
 	entry = {desc, {...}, time()}	
 	table.insert(EventBuffer, entry)
 	UpdateBuffLog(entry);
+	UpdateStateLog(entry);
 	if not a.PauseEventTracking then
 		table.insert(a.EventLog[UnitName("player")], entry)
 	end
@@ -85,6 +86,12 @@ function UpdateBuffLog(entry)
 		end
 		
 		a.BuffLog[entry[2][2]] = ability;
+	end
+end
+
+function UpdateStateLog(entry)
+	if entry[1] == "UNIT_SPELLCAST_SUCCEEDED" then
+		PrStateManager:UpdateStateLog(entry[2][2]);
 	end
 end
 

@@ -25,6 +25,7 @@ function PrStateManager:UpdateState()
 	current["target"]["healthOver25"] = hpPercent > 0.25 and 1 or 0;
 	current["target"]["healthOver0"] = hpPercent > 0.0 and 1 or 0;
 	current["target"]["isFriendly"] = UnitIsFriend("target", "player") and 1 or 0;
+	--TODO: Add mana values
 end
 
 function PrStateManager:DumpCurrentState()
@@ -84,6 +85,7 @@ end
 -- Compares a historical state object with the current state
 -- Returns a value representing the difference between the current and historical state (lower value = higher disparity)
 -- TODO: Need to think about the best way to utilize these numbers in a way that assists prediction
+-- Current approach is definitely NOT ideal. e.g. If a state attribute has a 10:100 True:False ratio, and the current state is TRUE, it should drastically increase the certainty of this event occurring...
 function PrStateManager:Compare(historyState)
 	PrStateManager:UpdateState();
 	local total = 0;

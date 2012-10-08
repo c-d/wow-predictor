@@ -30,6 +30,8 @@ function events:UNIT_SPELLCAST_SUCCEEDED(...)	ColHandleUnitSpellCast("UNIT_SPELL
 function events:UNIT_ENTERED_VEHICLE(...)	ColLogEvent("UNIT_ENTERED_VEHICLE", ...) end
 function events:UNIT_EXITED_VEHICLE(...)	ColLogEvent("UNIT_EXITED_VEHICLE", ...) end
 
+function events:UNIT_AURA(unitID)	PrAuraManager:AurasChanged(unitID) end
+
 function ColHandleUnitSpellCast(desc, ...)
 	if ... ~= nil then 
 		unit = ({...})[1]	-- first param is the unit being referenced
@@ -54,7 +56,8 @@ end
 --- Log an event to the global event log.
 -- Also handles all formatting.
 function ColLogEvent(desc, ...)
-	entry = {desc, {...}, time()}	
+	local entry = {desc, {...}, time()}	
+	--print(time());
 	table.insert(EventBuffer, entry)
 	UpdateBuffLog(entry);
 	UpdateStateLog(entry);
@@ -65,27 +68,7 @@ end
 
 function UpdateBuffLog(entry)
 	if entry[1] == "UNIT_SPELLCAST_SUCCEEDED" then
-		local ability = a.BuffLog[entry[2][2]];
-		if not ability then
-			ability = {};
-			--print("--new");
-		end
-		--print(entry[2][2] .. ": ");
-		
-		local i = 1;
-		local buff = UnitBuff("player", i);
-		while buff do
-			if not ability[buff] then
-				ability[buff] = 1;
-			else
-				ability[buff] = ability[buff] + 1;
-			end
-			--print("     " .. buff .. " (" .. ability[buff] .. ")");		
-			i = i + 1;
-			buff = UnitBuff("player", i);
-		end
-		
-		a.BuffLog[entry[2][2]] = ability;
+		PrAuraManager:UpdateBuffLog(entry)
 	end
 end
 
@@ -94,6 +77,5 @@ function UpdateStateLog(entry)
 		PrStateManager:UpdateStateLog(entry[2][2]);
 	end
 end
-
 
 if a.DebugMode then print("Collector loaded"); end;

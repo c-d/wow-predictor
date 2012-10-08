@@ -13,6 +13,7 @@
 	<Script file="Messenger.lua"/>
 	<Script file="Collector.lua"/>
 	<Script file="StateManager.lua"/>
+	<Script file="AuraManager.lua"/>
 	<Script file="MarkovAnalyser.lua"/>
 	<Script file="Predictor.lua"/>
 	<Script file="PrVisScroll.lua"/>

@@ -488,14 +488,11 @@ function PredictorAddon:LoadGlobalData()
 	if not PredictorAddonConfig then PredictorAddonConfig = {} end
 	
 	-- Models contains all models, indexed by player name
-	a.Models = loadFromConfig("Models");		
+	--a.Models = loadFromConfig("Models");	
 	a.DebugMode = loadFromConfig("DebugMode", false);	
 	a.ModelInUse = loadFromConfig("ModelInUse", UnitName("player"));
 	a.Size = loadFromConfig("Size");
 	a.Subscriptions = loadFromConfig("Subscriptions");
-	a.EventLog = loadFromConfig("SEventLog", nil, true);
-	a.BuffLog = loadFromConfig("BuffLog", nil, false);
-	a.StateLog = loadFromConfig("StateLog", nil, false);
 	a.ProcessEvents = loadFromConfig("ProcessEvents", true);
 	a.MaxTimeBetweenEvents = loadFromConfig("MaxTimeBetweenEvents", 30);
 	a.MinLikelihoodThreshold = loadFromConfig("MinLikelihoodThreshold", 0);
@@ -505,6 +502,11 @@ function PredictorAddon:LoadGlobalData()
 	a.WeightingBuffs = loadFromConfig("WeightingBuffs", 0);
 	a.WeightingState = loadFromConfig("WeightingState", 0);
 	
+	-- Historical data
+	a.EventLog = loadFromConfig("SEventLog", nil, true);
+	a.BuffLog = loadFromConfig("SBuffLog", nil, true);
+	a.StateLog = loadFromConfig("SStateLog", nil, true);
+	a.Models = loadFromConfig("SModels", nil, true);	
 	
 	a.VisMoveSpeed = loadFromConfig("VisMoveSpeed", 0.6);
 	a.VisAlphaDecay = loadFromConfig("VisAlphaDecay", 0.002);
@@ -567,7 +569,7 @@ end
 
 function PredictorAddon:SaveGlobalData()
 	dprint("PredictorCore: Saving data");
-	PredictorAddonConfig["Models"] = a.Models;
+	PredictorAddonConfig["SModels"] = AceSerializer:Serialize(a.Models);
 	PredictorAddonConfig["DebugMode"] = a.DebugMode;
 	PredictorAddonConfig["ModelInUse"] = a.ModelInUse;
 	PredictorAddonConfig["Size"] = a.Size;
@@ -581,13 +583,12 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["WeightingBuffs"] = a.WeightingBuffs;
 	PredictorAddonConfig["WeightingState"] = a.WeightingState;
 	
-	
-	
 	PredictorAddonConfig["SEventLog"] = AceSerializer:Serialize(a.EventLog);
-	PredictorAddonConfig["BuffLog"] = a.BuffLog;
-	PredictorAddonConfig["StateLog"] = a.StateLog;
+	PredictorAddonConfig["SBuffLog"] = AceSerializer:Serialize(a.BuffLog);
+	PredictorAddonConfig["SStateLog"] = AceSerializer:Serialize(a.StateLog);
 	-- Uncomment this line for more readable config files (copies contents of SEventLog, so wasted file size)
 	--PredictorAddonConfig["EventLog"] = a.EventLog;
+	-- PredictorAddonConfig["StateLog"] = a.StateLog;
 	
 	--PredictorAddonConfig["SelectedVis"] = a.SelectedVis;
 	

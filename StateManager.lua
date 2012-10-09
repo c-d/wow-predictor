@@ -5,6 +5,9 @@ PrStateManager = {}
 local current = {};
 local targets = {"player", "target"};
 
+local TRUE = 1;
+local FALSE = 2;
+
 function PrStateManager:UpdateState()
 	current["player"] = {};
 	current["target"] = {};
@@ -58,16 +61,16 @@ function PrStateManager:UpdateStateLog(eventName)
 		for i,targ in ipairs(targets) do
 			for k,v in pairs(current[targ]) do
 				saveState[targ][k] = {};
-				saveState[targ][k]["false"] = 0;	
-				saveState[targ][k]["true"] = 0;				
+				saveState[targ][k][FALSE] = 0;	
+				saveState[targ][k][TRUE] = 0;				
 			end
 		end
 	end
 	for i,targ in ipairs(targets) do
 		for k,v in pairs(current[targ]) do
-			local ind = "false";
+			local ind = FALSE;
 			if current[targ][k] == 1 then
-				ind = "true"
+				ind = TRUE
 			end
 			saveState[targ][k][ind] = saveState[targ][k][ind] + 1;
 		end
@@ -92,18 +95,19 @@ function PrStateManager:Compare(historyState)
 	local match = 0;
 	for i,targ in ipairs(targets) do
 		for k,v in pairs(historyState[targ]) do
-			local t = historyState[targ][k]["true"]
-			local f = historyState[targ][k]["false"]
+			local t = historyState[targ][k][TRUE]
+			local f = historyState[targ][k][FALSE]
 			if current[targ][k] == 1 then
-				--print(targ .. "::: " .. k .. " TRUE -- (" .. t .. "-" .. f .. ") -- " .. (t/f));
+				print(targ .. "::: " .. k .. " TRUE -- (" .. t .. "-" .. f .. ")");
 				match = match + t;
 			else
-				--print(targ .. "::: " .. k .. " FALSE --(" .. t .. "-" .. f .. ") -- " .. (f/t));
+				print(targ .. "::: " .. k .. " FALSE --(" .. t .. "-" .. f .. ")");
 				match = match + f;
 			end;
 			total = total + t + f;
 		end
 	end
+	--print(match / total);
 	return (match / total);
 end
 

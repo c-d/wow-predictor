@@ -288,12 +288,14 @@ function PrVisScroll:Update()
 			alpha = a.PredictedEvents[i][2] / 100.0;
 			texture = PredictListFrame.textures[i];
 			texture:SetTexture(icon, false);
-			--texture:SetAlpha(alpha);
+			--texture:SetAlpha(alpha);			
 			texture:Show();
 			field = PredictListFrame.textFields[i];	
 			--field:SetAlpha(alpha);
-			field:SetText(a.PredictedEvents[i][1]);
-			field:SetText(a.PredictedEvents[i][1] .. " (" .. a.PredictedEvents[i][2] .. "%)");
+			--field:SetText(a.PredictedEvents[i][1]);
+			local v = a.PredictedEvents[i][3]
+			local extraInfo = " [" .. round(v["event-unweighted"], 2) .. ", " .. round(v["buff-unweighted"], 2) .. ", " .. round(v["state-unweighted"], 2) .. "]";
+			field:SetText(a.PredictedEvents[i][1] .. " (" .. a.PredictedEvents[i][2] .. "%)" .. extraInfo);
 			field:Show();
 		end	
 	end
@@ -314,7 +316,7 @@ function PrVisScroll:UpdateAccuracyTextVisibility()
 end
 	
 function PrVisScroll:SpellWasCast(spellName)
-	if not a.HideVisualizations then 
+	if not a.HideVisualizations and PredictListFrame then 
 		local spellFound = false;
 		local rank = 0;
 		local likelihood = 0;

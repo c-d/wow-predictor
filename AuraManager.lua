@@ -8,11 +8,11 @@ local history = {}
 -- If we check when the UNIT_SPELLCAST_SUCCEEDED event is caught, the auras have already updated.
 -- So instead we keep track of historical aura data, and check THAT, rather than the current aura info.
 function PrAuraManager:AurasChanged(unitID)
+	--print("Auras changed at " .. time());
 	if unitID == "player" then
 		history = {};			-- reset
 		local i = 1;
 		local buff = UnitBuff("player", i);
-		--print("Auras changed at " .. time());
 		while buff do
 			--print("     " .. buff);		
 			tinsert(history, buff);
@@ -29,7 +29,6 @@ function PrAuraManager:UpdateBuffLog(entry)
 			if not ability then
 				ability = {};
 			end
-			--print(entry[2][2] .. ": ");
 			
 			for i,buff in ipairs(history) do
 				if not ability[buff] then
@@ -39,6 +38,7 @@ function PrAuraManager:UpdateBuffLog(entry)
 				end
 				--print("     " .. buff .. " (" .. ability[buff] .. ")");		
 			end
+			a.BuffLog[entry[2][2]] = ability;
 		end
 	end
 end

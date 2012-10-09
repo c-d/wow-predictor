@@ -92,18 +92,24 @@ function Predictor:PredictActions()
 					splitter = string.find(spell, "&");
 					spell = string.sub(spell, splitter+1);
 					if iconInSpellbook(spell) then
-						local eventWeight = (p["links"][i]["count"] / total) * a.WeightingEvents;
-						--print("Event weight: " .. eventWeight);
+						local vals = {};
+						local eventWeight = (p["links"][i]["count"] / total);
 						local buffWeight = Predictor:GetBuffWeighting(spell);
 						local stateWeight = Predictor:GetStateWeighting(spell);
+						vals["event-unweighted"] = eventWeight;
+						vals["buff-unweighted"] = buffWeight;
+						vals["state-unweighted"] = stateWeight;
+						vals["event-weighted"] = eventWeight * a.WeightingEvents;
+						vals["buff-weighted"] = buffWeight * a.WeightingBuffs;
+						vals["state-weighted"] = stateWeight * a.WeightingState;
+						-- print("Event weight: " .. eventWeight);
 						-- print("Buff weight: " .. buffWeight);
 						-- print("State weight: " .. stateWeight);
-						-- print("Event weight: " .. eventWeight);
 						-- print("Weight sum: " .. weightSum);
-						local predictedWeight = round(((eventWeight + buffWeight + stateWeight) / weightSum) * 100);
+						local predictedWeight = round(((vals["event-weighted"] + vals["buff-weighted"] + vals["state-weighted"]) / weightSum) * 100);
 						--print("Predicted weight: " .. predictedWeight);
 						if predictedWeight >= a.MinLikelihoodThreshold then
-							table.insert(a.PredictedEvents, {spell, predictedWeight});
+							table.insert(a.PredictedEvents, {spell, predictedWeight, vals});
 						end
 					--else
 					--	print(spell);
@@ -145,12 +151,12 @@ function Predictor:GetBuffWeighting(spell)
 				end
 			end
 		end
-		return (sum / totalPredicted) * a.WeightingBuffs;
+		return (sum / totalPredicted);
 	end
 end
 
 function Predictor:GetStateWeighting(spell)
-	return PrStateManager:GetLikelihoodForSpell(spell) * a.WeightingState;
+	return PrStateManager:GetLikelihoodForSpell(spell);
 end
 
 function iconInSpellbook(spell)

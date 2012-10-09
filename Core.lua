@@ -460,6 +460,18 @@ function PredictorAddon:setupOptions()
 							return a.VisShowPredAccuracy;
 						end
 					},
+					showverboseinfo = {
+						name = "Show verbose prediction info",
+						desc = "Show details of source values used to generate the displayed prediction likelihood. This is shown in the prediction visualisation as [event weight, buff weight, state weight], where each weight is the likelhood of an event occurring given that particular factor only. Note that the actual value used to generate the final prediction takes the configured weightings for each factor into account.",
+						type = "toggle",
+						set = function(info, val) 
+							a.VisShowVerboseInfo = val;
+							PredictorAddon:SaveGlobalData();
+						end,
+						get = function()
+							return a.VisShowVerboseInfo;
+						end
+					},
 					showinfo = {
 						order = 2,
 						name = "Show info panel",
@@ -517,6 +529,7 @@ function PredictorAddon:LoadGlobalData()
 	a.VisDragEnabled = loadFromConfig("VisDragEnabled", true);
 	a.VisShowRankAccuracy = loadFromConfig("VisShowRankAccuracy", false);
 	a.VisShowPredAccuracy = loadFromConfig("VisShowPredAccuracy", false);
+	a.VisShowVerboseInfo = loadFromConfig("VisShowVerboseInfo", false);
 	--a.SelectedVis = loadFromConfig("SelectedVis", "PrVisScroll");
 	
 	a.EvaluationMode = loadFromConfig("EvaluationMode", false);
@@ -601,6 +614,7 @@ function PredictorAddon:SaveGlobalData()
 	PredictorAddonConfig["VisDragEnabled"] = a.VisDragEnabled;
 	PredictorAddonConfig["VisShowRankAccuracy"] = a.VisShowRankAccuracy;
 	PredictorAddonConfig["VisShowPredAccuracy"] = a.VisShowPredAccuracy;
+	PredictorAddonConfig["VisShowVerboseInfo"] = a.VisShowVerboseInfo;
 	
 	PredictorAddonConfig["EvaluationMode"] = a.EvaluationMode;
 end

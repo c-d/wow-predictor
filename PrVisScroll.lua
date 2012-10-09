@@ -266,9 +266,9 @@ end
 
 function PrVisScroll:InitAccuracyInfo()
 	rankText = PredictListFrame:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
-	rankText:SetPoint("TOPLEFT", 150, -10);
+	rankText:SetPoint("TOPLEFT", 5, 50);
 	likelihoodText = PredictListFrame:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
-	likelihoodText:SetPoint("TOPLEFT", 150, -30);
+	likelihoodText:SetPoint("TOPLEFT", 5, 30);
 end
 
 function PrVisScroll:Update()
@@ -293,8 +293,11 @@ function PrVisScroll:Update()
 			field = PredictListFrame.textFields[i];	
 			--field:SetAlpha(alpha);
 			--field:SetText(a.PredictedEvents[i][1]);
-			local v = a.PredictedEvents[i][3]
-			local extraInfo = " [" .. round(v["event-unweighted"], 2) .. ", " .. round(v["buff-unweighted"], 2) .. ", " .. round(v["state-unweighted"], 2) .. "]";
+			local extraInfo = "";
+			if a.VisShowVerboseInfo then
+				local v = a.PredictedEvents[i][3]
+				extraInfo = " [" .. round(v["event-unweighted"], 2) .. ", " .. round(v["buff-unweighted"], 2) .. ", " .. round(v["state-unweighted"], 2) .. "]";
+			end
 			field:SetText(a.PredictedEvents[i][1] .. " (" .. a.PredictedEvents[i][2] .. "%)" .. extraInfo);
 			field:Show();
 		end	

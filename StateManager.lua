@@ -98,10 +98,10 @@ function PrStateManager:Compare(historyState)
 			local t = historyState[targ][k][TRUE]
 			local f = historyState[targ][k][FALSE]
 			if current[targ][k] == 1 then
-				print(targ .. "::: " .. k .. " TRUE -- (" .. t .. "-" .. f .. ")");
+				--print(targ .. "::: " .. k .. " TRUE -- (" .. t .. "-" .. f .. ")");
 				match = match + t;
 			else
-				print(targ .. "::: " .. k .. " FALSE --(" .. t .. "-" .. f .. ")");
+				--print(targ .. "::: " .. k .. " FALSE --(" .. t .. "-" .. f .. ")");
 				match = match + f;
 			end;
 			total = total + t + f;
